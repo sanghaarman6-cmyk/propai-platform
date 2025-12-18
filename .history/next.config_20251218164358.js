@@ -3,8 +3,9 @@ const nextConfig = {
   typedRoutes: false,
 
   typescript: {
-    ignoreBuildErrors: true
-  }
+    // 🚨 CRITICAL: stop Next from enforcing AppPageConfig
+    ignoreBuildErrors: true,
+  },
 }
 
 module.exports = nextConfig
