@@ -1,0 +1,1 @@
+detectFirm.ts
