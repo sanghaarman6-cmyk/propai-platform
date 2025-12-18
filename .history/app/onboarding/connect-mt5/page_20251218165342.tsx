@@ -34,7 +34,7 @@ const ConnectMT5Page = () => {
           equity: data.account.equity,
           positions: data.account.positions,
           history: data.account.history,
-        } as any)
+        })
       } catch {}
     }, 10_000)
 
@@ -52,7 +52,7 @@ const ConnectMT5Page = () => {
       addOrUpdateAccount({
         id,
         status: "connecting",
-      } as any)
+      })
     }
 
     try {
@@ -69,13 +69,13 @@ const ConnectMT5Page = () => {
         balance: data.balance,
         equity: data.equity,
         currency: data.currency,
-      } as any)
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : "Connection failed")
       addOrUpdateAccount({
         id,
         status: "error",
-      } as any)
+      })
     } finally {
       setLoading(false)
     }

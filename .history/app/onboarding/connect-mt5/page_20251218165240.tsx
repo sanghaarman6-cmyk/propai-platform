@@ -9,9 +9,12 @@ import GlowButton from "@/components/GlowButton"
 import { useMT5Store } from "@/lib/mt5Store"
 
 const ConnectMT5Page = () => {
+  import type { MT5AccountUpdate } from "@/lib/mt5Store"
+
   const addOrUpdateAccount = useMT5Store(
-    (s) => s.addOrUpdateAccount
+    (s) => s.addOrUpdateAccount as (update: MT5AccountUpdate) => void
   )
+
   const accounts = useMT5Store((s) => s.accounts)
 
   const [loading, setLoading] = useState(false)
@@ -34,7 +37,7 @@ const ConnectMT5Page = () => {
           equity: data.account.equity,
           positions: data.account.positions,
           history: data.account.history,
-        } as any)
+        })
       } catch {}
     }, 10_000)
 
@@ -49,10 +52,7 @@ const ConnectMT5Page = () => {
     const id = existing?.id ?? crypto.randomUUID()
 
     if (!existing) {
-      addOrUpdateAccount({
-        id,
-        status: "connecting",
-      } as any)
+      addOrUpdateAccount({ id, status: "connecting" })
     }
 
     try {
@@ -69,13 +69,10 @@ const ConnectMT5Page = () => {
         balance: data.balance,
         equity: data.equity,
         currency: data.currency,
-      } as any)
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : "Connection failed")
-      addOrUpdateAccount({
-        id,
-        status: "error",
-      } as any)
+      addOrUpdateAccount({ id, status: "error" })
     } finally {
       setLoading(false)
     }
