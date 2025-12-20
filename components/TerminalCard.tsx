@@ -1,15 +1,17 @@
+import { ReactNode } from "react"
+
 export default function TerminalCard({
   title,
   children,
 }: {
-  title?: string
-  children: React.ReactNode
+  title?: ReactNode
+  children: ReactNode
 }) {
   return (
-    <div className="rounded border border-border bg-bg-panel p-4">
+    <div className="rounded-xl border border-white/10 bg-black/40 p-4">
       {title && (
-        <div className="mb-3 text-xs font-mono text-text-muted">
-          {title.toUpperCase()}
+        <div className="mb-3 text-sm font-medium text-white">
+          {title}
         </div>
       )}
       {children}

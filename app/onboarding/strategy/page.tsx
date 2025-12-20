@@ -54,7 +54,7 @@ export default function StrategyOnboardingPage() {
 
   function accept() {
     confirm()
-    router.push("/onboarding/accounts")
+    router.push("/onboarding/connect-account")
   }
 
   return (

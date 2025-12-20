@@ -1,57 +1,52 @@
 import { create } from "zustand"
-import { persist } from "zustand/middleware"
+
+/* ---------- TYPES ---------- */
 
 export type StrategyProfile = {
-  style: string
-  markets: string[]
-  instruments: string[]
-  timeframes: string[]
-  sessions: string[]
-
-  entry_model: string
-  exit_model: string
-
-  risk_per_trade_pct: number
-  daily_stop_rule: string
-  max_trades_per_day: number
-
-  edge_definition: string
-  known_failures: string[]
-
-  confidence_score: number
-  uncertainty_notes: string[]
+  style?: string
+  timeframe?: string
+  risk?: string
+  markets?: string[]
 }
 
 type StrategyState = {
-  rawText: string | null
+  rawText: string
   profile: StrategyProfile | null
   confirmed: boolean
 
-  setRawText: (t: string) => void
-  setProfile: (p: StrategyProfile) => void
+  setRawText: (text: string) => void
+  setProfile: (profile: StrategyProfile) => void
   confirm: () => void
   reset: () => void
 }
 
-export const useStrategyStore = create<StrategyState>()(
-  persist(
-    (set) => ({
-      rawText: null,
+/* ---------- STORE ---------- */
+
+export const useStrategyStore = create<StrategyState>((set) => ({
+  rawText: "",
+  profile: null,
+  confirmed: false,
+
+  setRawText: (text) =>
+    set({
+      rawText: text,
+      confirmed: false,
+    }),
+
+  setProfile: (profile) =>
+    set({
+      profile,
+    }),
+
+  confirm: () =>
+    set({
+      confirmed: true,
+    }),
+
+  reset: () =>
+    set({
+      rawText: "",
       profile: null,
       confirmed: false,
-
-      setRawText: (t) => set({ rawText: t }),
-      setProfile: (p) => set({ profile: p }),
-      confirm: () => set({ confirmed: true }),
-      reset: () =>
-        set({
-          rawText: null,
-          profile: null,
-          confirmed: false,
-        }),
     }),
-    {
-      name: "strategy-profile",
-    }
-  )
-)
+}))

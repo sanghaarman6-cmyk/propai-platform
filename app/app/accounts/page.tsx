@@ -1,122 +1,178 @@
 "use client"
 
 import { motion } from "framer-motion"
-import clsx from "clsx"
+import { useRouter } from "next/navigation"
+import { useMT5Store } from "@/lib/mt5Store"
 import TerminalCard from "@/components/TerminalCard"
-import { useAccountHubStore } from "@/lib/accountHubStore"
+import GlowButton from "@/components/GlowButton"
 
-/* -------------------------
-   UI helpers
--------------------------- */
-
-function StatusBadge({ status }: { status: string }) {
-  const color =
-    status === "breached"
-      ? "bg-red-500/10 text-red-400 border-red-500/30"
-      : status === "at_risk"
-      ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/30"
-      : "bg-green-500/10 text-green-400 border-green-500/30"
-
-  return (
-    <span
-      className={clsx(
-        "rounded border px-2 py-0.5 text-xs font-medium",
-        color
-      )}
-    >
-      {status}
-    </span>
+function isUuid(v: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    v
   )
 }
 
-/* -------------------------
-   Page
--------------------------- */
+export default function AccountsPage() {
+  const router = useRouter()
 
-export default function AccountsDashboardPage() {
-  const accounts = useAccountHubStore((s) => s.accounts)
-  const selectedId = useAccountHubStore((s) => s.selectedAccountId)
-  const setSelected = useAccountHubStore((s) => s.setSelectedAccount)
+  const accounts = useMT5Store((s) => s.accounts)
+  const activeId = useMT5Store((s) => s.activeAccountId)
+  const setActive = useMT5Store((s) => s.setActiveAccount)
+  const removeAccount = useMT5Store((s) => s.removeAccount)
+
+  async function handleDelete(id: string, isActive: boolean) {
+    if (isActive) {
+      alert("You cannot delete the active account.")
+      return
+    }
+
+    if (!id || !isUuid(id)) {
+      alert(
+        "This account is not a persisted Supabase account and cannot be deleted."
+      )
+      return
+    }
+
+    const ok = confirm(
+      "Delete this trading account? This cannot be undone."
+    )
+    if (!ok) return
+
+    const res = await fetch(`/api/accounts/${id}`, {
+      method: "DELETE",
+    })
+
+    const payload = await res.json().catch(() => ({}))
+
+    if (!res.ok) {
+      alert(payload?.error || "Delete failed")
+      return
+    }
+
+    removeAccount(id)
+  }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
-      className="space-y-6"
-    >
-      {/* Header */}
-      <div>
-        <div className="text-xs text-text-muted">Accounts</div>
-        <h1 className="text-2xl font-semibold">MT5 Prop Accounts</h1>
-      </div>
+    <div className="min-h-screen bg-bg-primary p-8">
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mx-auto max-w-4xl space-y-6"
+      >
+        {/* HEADER */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-semibold text-white">
+            Trading Accounts
+          </h1>
 
-      {accounts.length === 0 ? (
-        <TerminalCard title="No accounts connected">
-          <div className="text-sm text-text-muted">
-            Connect an MT5 account to start live tracking, risk monitoring,
-            and AI coaching.
-          </div>
-        </TerminalCard>
-      ) : (
-        <TerminalCard title="Connected Accounts">
-          <div className="space-y-3">
-            {accounts.map((acc) => (
-              <div
-                key={acc.id}
-                onClick={() => setSelected(acc.id)}
-                className={clsx(
-                  "grid grid-cols-12 items-center gap-3 rounded border p-3 cursor-pointer transition",
-                  selectedId === acc.id
-                    ? "border-accent-cyan bg-accent-cyan/5"
-                    : "border-border bg-black/30 hover:bg-black/40"
-                )}
-              >
-                {/* Account / Firm */}
-                <div className="col-span-3">
-                  <div className="text-sm font-medium">
-                    {acc.name ?? "MT5 Account"}
+          <GlowButton
+            onClick={() =>
+              router.push("/onboarding/connect-account")
+            }
+          >
+            + Add Account
+          </GlowButton>
+        </div>
+
+        {accounts.length === 0 && (
+          <TerminalCard title="No Accounts">
+            <p className="text-text-muted text-sm">
+              You haven’t added any trading accounts yet.
+            </p>
+          </TerminalCard>
+        )}
+
+        {accounts.map((account) => {
+          const isActive = account.id === activeId
+
+          return (
+            <TerminalCard
+              key={account.id}
+              title={
+                <div className="flex items-center justify-between gap-3">
+                  <span>{account.firmDetected ?? "Unknown Firm"}</span>
+
+                  <div className="flex items-center gap-3">
+                    {isActive && (
+                      <span className="text-xs text-green-400">
+                        ACTIVE
+                      </span>
+                    )}
+
+                    <button
+                      disabled={isActive}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDelete(account.id, isActive)
+                      }}
+                      className={`text-xs ${
+                        isActive
+                          ? "cursor-not-allowed text-gray-500"
+                          : "text-red-400 hover:text-red-300"
+                      }`}
+                    >
+                      DELETE
+                    </button>
                   </div>
-                  <div className="text-xs text-text-muted">
-                    {acc.firmDetected ?? "Unknown prop firm"}
-                  </div>
+                </div>
+              }
+            >
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-text-muted">Account</p>
+                  <p className="text-white">{account.name ?? "—"}</p>
                 </div>
 
-                {/* Phase */}
-                <div className="col-span-2 text-sm">
-                  {acc.metrics.phase}
+                <div>
+                  <p className="text-text-muted">Login</p>
+                  <p className="text-white">{account.login ?? "—"}</p>
                 </div>
 
-                {/* Status */}
-                <div className="col-span-2">
-                  <StatusBadge status={acc.metrics.status} />
+                <div>
+                  <p className="text-text-muted">Balance</p>
+                  <p className="text-white">
+                    {account.balance?.toLocaleString() ?? "—"}{" "}
+                    {account.currency}
+                  </p>
                 </div>
 
-                {/* Daily DD */}
-                <div className="col-span-2 text-sm font-mono">
-                  {acc.metrics.ddTodayPct !== undefined
-                    ? `${acc.metrics.ddTodayPct.toFixed(1)}%`
-                    : "—"}
+                <div>
+                  <p className="text-text-muted">Equity</p>
+                  <p className="text-white">
+                    {account.equity?.toLocaleString() ?? "—"}{" "}
+                    {account.currency}
+                  </p>
                 </div>
 
-                {/* Max DD */}
-                <div className="col-span-2 text-sm font-mono">
-                  {acc.metrics.ddTotalPct !== undefined
-                    ? `${acc.metrics.ddTotalPct.toFixed(1)}%`
-                    : "—"}
-                </div>
-
-                {/* Equity */}
-                <div className="col-span-1 text-sm font-mono">
-                  {acc.metrics.equity
-                    ? `$${acc.metrics.equity.toLocaleString()}`
-                    : "—"}
+                <div>
+                  <p className="text-text-muted">Status</p>
+                  <p
+                    className={
+                      account.status === "connected"
+                        ? "text-green-400"
+                        : account.status === "error"
+                        ? "text-red-400"
+                        : "text-yellow-400"
+                    }
+                  >
+                    {account.status ?? "unknown"}
+                  </p>
                 </div>
               </div>
-            ))}
-          </div>
-        </TerminalCard>
-      )}
-    </motion.div>
+
+              {!isActive && (
+                <div className="mt-4">
+                  <GlowButton
+                    onClick={() => setActive(account.id)}
+                  >
+                    Switch to this account
+                  </GlowButton>
+                </div>
+              )}
+            </TerminalCard>
+          )
+        })}
+      </motion.div>
+    </div>
   )
 }

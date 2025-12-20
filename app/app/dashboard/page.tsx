@@ -8,8 +8,13 @@ import RuleMeter from "@/components/RuleMeter"
 import { useActiveAccount } from "@/lib/selectors/useActiveAccount"
 import { computeDrawdownMetrics } from "@/lib/metrics/drawdown"
 import { mapMT5Trade } from "@/lib/mappers/mt5TradeMapper"
+import { useAuthGuard } from "@/lib/hooks/useAuthGuard"
+
 
 export default function DashboardPage() {
+  // 🔒 Route protection
+  
+  
   const account = useActiveAccount()
 
   /* -------------------------------------------------
@@ -17,27 +22,31 @@ export default function DashboardPage() {
   -------------------------------------------------- */
   const balance = account?.balance ?? 0
   const equity = account?.equity ?? 0
-  const rawHistory = account?.history
+  const currency = account?.currency ?? "USD"
 
-  const history = Array.isArray(rawHistory)
-    ? rawHistory
+  const history = Array.isArray(account?.history)
+    ? account!.history
     : []
 
   const positions = Array.isArray(account?.positions)
     ? account!.positions
     : []
 
-  const currency = account?.currency ?? ""
+  /* -------------------------------------------------
+     BASELINE (CRITICAL FOR PROP FIRMS)
+  -------------------------------------------------- */
+  const baseline =
+    account?.baselineBalance ??
+    account?.balance ??
+    0
 
   /* -------------------------------------------------
      DERIVED DATA
   -------------------------------------------------- */
-
   const { ddPct, ddUsd } = computeDrawdownMetrics(
-  history,
-  balance
-)
-
+    history,
+    baseline
+  )
 
   const trades = useMemo(
     () => history.map(mapMT5Trade),
@@ -60,7 +69,7 @@ export default function DashboardPage() {
   }, [history])
 
   /* -------------------------------------------------
-     SAFE EARLY RETURN (AFTER hooks)
+     DATA-READY GUARD (NO FAKE ZERO STATS)
   -------------------------------------------------- */
   if (!account) {
     return (
@@ -72,10 +81,10 @@ export default function DashboardPage() {
     )
   }
 
+
   /* -------------------------------------------------
      RENDER
   -------------------------------------------------- */
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -87,7 +96,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* KPI Strip */}
+      {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-6">
         <KPI label="Win rate" value={`${stats.winRate}%`} />
         <KPI label="Trades" value={stats.trades.toString()} />
@@ -99,7 +108,7 @@ export default function DashboardPage() {
         <KPI label="Drawdown" value={`${ddPct.toFixed(2)}%`} />
         <KPI
           label="Open positions"
-          value={String(positions?.length ?? 0)}
+          value={String(positions.length)}
         />
         <KPI
           label="Equity"

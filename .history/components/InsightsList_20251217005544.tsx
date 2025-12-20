@@ -1,1 +1,0 @@
-InsightsList.tsx

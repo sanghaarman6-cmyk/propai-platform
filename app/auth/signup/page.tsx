@@ -1,33 +1,73 @@
 "use client"
 
-import Link from "next/link"
+import { useState } from "react"
+import { supabase } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 import GlowButton from "@/components/GlowButton"
 
 export default function SignupPage() {
+  const router = useRouter()
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  async function signup() {
+    setLoading(true)
+    setError(null)
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    })
+
+    if (error) {
+      setError(error.message)
+      setLoading(false)
+      return
+    }
+
+    // 🔑 FORCE SESSION (THIS IS THE KEY)
+    const loginRes = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (loginRes.error) {
+      setError("Signup succeeded but auto-login failed.")
+      setLoading(false)
+      return
+    }
+
+    const sessionCheck = await supabase.auth.getSession()
+    console.log("✅ SESSION AFTER SIGNUP:", sessionCheck.data.session)
+
+    if (!sessionCheck.data.session) {
+      setError("Session not established after signup.")
+      setLoading(false)
+      return
+    }
+
+    router.push("/onboarding/connect-account")
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-bg">
-      <div className="w-full max-w-sm rounded border border-border bg-bg-panel p-6">
-        <h1 className="mb-6 text-xl font-semibold">Create account</h1>
-
-        <input
-          placeholder="Email"
-          className="mb-3 w-full rounded border border-border bg-black px-3 py-2 text-sm"
-        />
-        <input
-          placeholder="Password"
-          type="password"
-          className="mb-6 w-full rounded border border-border bg-black px-3 py-2 text-sm"
-        />
-
-        <GlowButton>Create account</GlowButton>
-
-        <div className="mt-4 text-xs text-text-muted">
-          Already have an account?{" "}
-          <Link href="/auth/login" className="underline">
-            Login
-          </Link>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <input
+        className="w-full rounded bg-bg-secondary p-2"
+        placeholder="Email"
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <input
+        type="password"
+        className="w-full rounded bg-bg-secondary p-2"
+        placeholder="Password"
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      {error && <div className="text-red-400 text-sm">{error}</div>}
+      <GlowButton onClick={signup} disabled={loading}>
+        {loading ? "Creating account…" : "Create account"}
+      </GlowButton>
     </div>
   )
 }
