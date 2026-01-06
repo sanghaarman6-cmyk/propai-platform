@@ -1,4 +1,6 @@
+
 "use client"
+
 
 /**
  * EDGELY.AI — Landing Page (ready-to-publish)
@@ -15,12 +17,13 @@
  */
 
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import clsx from "clsx"
 import {
   ArrowRight,
   Check,
+  Mail,
   ShieldAlert,
   Sparkles,
   BarChart3,
@@ -55,23 +58,9 @@ function FeaturePreviewImage({ feature }: { feature: Feature }) {
       <div className="absolute -inset-3 rounded-3xl bg-emerald-500/10 blur-2xl" />
 
       {/* Frame */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/60 shadow-[0_30px_90px_rgba(0,0,0,0.7)]">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-          <div>
-            <div className="text-sm font-semibold text-white">
-              {feature.previewTitle}
-            </div>
-            <div className="text-xs text-white/50">
-              {feature.previewSubtitle}
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <span className="h-2 w-2 rounded-full bg-white/20" />
-            <span className="h-2 w-2 rounded-full bg-white/20" />
-            <span className="h-2 w-2 rounded-full bg-white/20" />
-          </div>
-        </div>
+      <div className="relative overflow-hidden rounded-3xl border border-black/10 bg-black/60 shadow-[0_30px_90px_rgba(0,0,0,0.7)]">
+
+
 
         {/* Image */}
         <div className="relative aspect-[16/9] w-full">
@@ -235,8 +224,7 @@ type Feature = {
   tagline: string
   bullets: string[]
   outcomes: string[]
-  previewTitle: string
-  previewSubtitle: string
+
   colorHint: "emerald" | "blue" | "yellow" | "purple" | "red"
 }
 
@@ -258,10 +246,8 @@ const FEATURES: Feature[] = [
       "Identify the setups that actually pay",
       "Build a repeatable edge with clarity",
     ],
-    previewTitle: "AI Analytics",
-    previewSubtitle: "Pinpoint why you’re leaking performance in 30 seconds.",
     colorHint: "emerald",
-    image: "/ANALYTICS1.png",
+    image: "/ANALYTICS.png",
   },
   {
     key: "journal",
@@ -280,10 +266,9 @@ const FEATURES: Feature[] = [
       "Cleaner habits and tighter execution",
       "Faster learning from repetition",
     ],
-    previewTitle: "Simple Journal",
-    previewSubtitle: "A few clicks → a trade is fully documented.",
+
     colorHint: "blue",
-    image: "/JOURNAL1.png",
+    image: "/JOURNAL.png",
   },
   {
     key: "calculators",
@@ -302,10 +287,9 @@ const FEATURES: Feature[] = [
       "Reduce errors under pressure",
       "Trade with consistent risk",
     ],
-    previewTitle: "Calculator Hub",
-    previewSubtitle: "Everything risk-related in one tight interface.",
+
     colorHint: "yellow",
-    image: "/MARGIN1.png",
+    image: "/MARGIN.png",
   },
   {
     key: "backtester",
@@ -324,10 +308,9 @@ const FEATURES: Feature[] = [
       "Keep data consistent",
       "Validate edge without burnout",
     ],
-    previewTitle: "Backtesting",
-    previewSubtitle: "Log quickly → gather data → refine your edge.",
+
     colorHint: "purple",
-    image: "/BACKTESTER1.png",
+    image: "/BACKTESTER.png",
   },
   {
     key: "calendar",
@@ -346,10 +329,9 @@ const FEATURES: Feature[] = [
       "Trade with confidence",
       "Cleaner performance around news",
     ],
-    previewTitle: "Economic Calendar",
-    previewSubtitle: "Know when NOT to trade — instantly per symbol.",
+
     colorHint: "red",
-    image: "/NEWS1.png",
+    image: "/NEWS.png",
   },
   {
     key: "fundamentals",
@@ -368,10 +350,9 @@ const FEATURES: Feature[] = [
       "Better trade timing & context",
       "Higher conviction execution",
     ],
-    previewTitle: "Fundamental Context",
-    previewSubtitle: "Translate macro events into trader decisions.",
+
     colorHint: "emerald",
-    image: "/FUNDAMENTALS1.png",
+    image: "/FUNDAMENTALS.png",
   },
 ]
 
@@ -455,428 +436,6 @@ function Chip({ children }: { children: React.ReactNode }) {
   )
 }
 
-function FeaturePreviewMock({ feature }: { feature: Feature }) {
-  // Different layouts per feature for visual variety
-  if (feature.key === "analytics") {
-    return (
-      <PreviewFrame
-        title={feature.previewTitle}
-        subtitle={feature.previewSubtitle}
-        hint={feature.colorHint}
-      >
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="text-xs text-white/60">Edge Snapshot</div>
-              <Chip>AI</Chip>
-            </div>
-            <div className="text-2xl font-semibold text-white">+1.84R</div>
-            <div className="mt-2 text-xs text-white/50">
-              Most consistent setup this week
-            </div>
-            <div className="mt-4 space-y-2">
-              <SkeletonLine w="w-4/5" />
-              <SkeletonLine w="w-3/5" />
-              <SkeletonLine w="w-2/3" />
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 md:col-span-2">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="text-xs text-white/60">What you’re missing</div>
-              <Chip>Action plan</Chip>
-            </div>
-
-            <div className="space-y-3">
-              <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 p-3">
-                <div className="text-sm font-semibold text-emerald-200">
-                  Reduce entries in chop
-                </div>
-                <div className="mt-1 text-xs text-emerald-100/70">
-                  Your losses cluster during low volatility between sessions.
-                </div>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-                <div className="text-sm font-semibold text-white">
-                  Increase focus on Setup A
-                </div>
-                <div className="mt-1 text-xs text-white/60">
-                  Highest expectancy. Best when aligned with news calendar.
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-                  <div className="text-xs text-white/50">Winrate</div>
-                  <div className="mt-1 text-lg font-semibold text-white">
-                    57%
-                  </div>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-                  <div className="text-xs text-white/50">Avg R</div>
-                  <div className="mt-1 text-lg font-semibold text-white">
-                    0.42
-                  </div>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-                  <div className="text-xs text-white/50">Max DD</div>
-                  <div className="mt-1 text-lg font-semibold text-white">
-                    -2.1%
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </PreviewFrame>
-    )
-  }
-
-  if (feature.key === "journal") {
-    return (
-      <PreviewFrame
-        title={feature.previewTitle}
-        subtitle={feature.previewSubtitle}
-        hint={feature.colorHint}
-      >
-        <div className="grid gap-4 md:grid-cols-5">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 md:col-span-2">
-            <div className="text-xs text-white/60">Tags</div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Chip>mistake: late entry</Chip>
-              <Chip>setup: gap &amp; go</Chip>
-              <Chip>habit: slept well</Chip>
-              <Chip>emotion: impatience</Chip>
-              <Chip>rule: news proximity</Chip>
-            </div>
-            <div className="mt-4 space-y-2">
-              <SkeletonLine w="w-full" />
-              <SkeletonLine w="w-5/6" />
-              <SkeletonLine w="w-3/4" />
-              <SkeletonLine w="w-2/3" />
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 md:col-span-3">
-            <div className="flex items-center justify-between">
-              <div className="text-xs text-white/60">Reflection</div>
-              <Chip>2 min</Chip>
-            </div>
-            <div className="mt-3 rounded-xl border border-white/10 bg-black/40 p-4">
-              <SkeletonLine w="w-5/6" />
-              <div className="mt-2 space-y-2">
-                <SkeletonLine w="w-full" />
-                <SkeletonLine w="w-11/12" />
-                <SkeletonLine w="w-10/12" />
-                <SkeletonLine w="w-9/12" />
-              </div>
-            </div>
-            <div className="mt-4 grid grid-cols-3 gap-3">
-              <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-                <div className="text-xs text-white/50">Setup</div>
-                <div className="mt-1 text-sm font-semibold text-white">
-                  Pullback
-                </div>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-                <div className="text-xs text-white/50">Grade</div>
-                <div className="mt-1 text-sm font-semibold text-white">
-                  B+
-                </div>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-                <div className="text-xs text-white/50">Next time</div>
-                <div className="mt-1 text-sm font-semibold text-white">
-                  Wait confirm
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </PreviewFrame>
-    )
-  }
-
-  if (feature.key === "calculators") {
-    return (
-      <PreviewFrame
-        title={feature.previewTitle}
-        subtitle={feature.previewSubtitle}
-        hint={feature.colorHint}
-      >
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="text-xs text-white/60">Position Size</div>
-              <Chip>fast</Chip>
-            </div>
-            <div className="space-y-3">
-              <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-                <div className="text-xs text-white/50">Symbol</div>
-                <div className="mt-1 text-sm font-semibold text-white">
-                  EURUSD
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-                  <div className="text-xs text-white/50">Risk</div>
-                  <div className="mt-1 text-sm font-semibold text-white">
-                    1%
-                  </div>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-                  <div className="text-xs text-white/50">Stop</div>
-                  <div className="mt-1 text-sm font-semibold text-white">
-                    18 pips
-                  </div>
-                </div>
-              </div>
-              <div className="rounded-xl border border-yellow-400/20 bg-yellow-400/10 p-3">
-                <div className="text-xs text-yellow-100/70">Result</div>
-                <div className="mt-1 text-lg font-semibold text-yellow-200">
-                  0.55 lots
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="text-xs text-white/60">Margin</div>
-              <Chip>one place</Chip>
-            </div>
-            <div className="space-y-3">
-              <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-                  <div className="text-xs text-white/50">Leverage</div>
-                  <div className="mt-1 text-sm font-semibold text-white">
-                    1:500
-                  </div>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-                  <div className="text-xs text-white/50">Size</div>
-                  <div className="mt-1 text-sm font-semibold text-white">
-                    1.0
-                  </div>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-                  <div className="text-xs text-white/50">Price</div>
-                  <div className="mt-1 text-sm font-semibold text-white">
-                    1.0924
-                  </div>
-                </div>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-                <div className="text-xs text-white/50">Required margin</div>
-                <div className="mt-2 text-2xl font-semibold text-white">
-                  $218.40
-                </div>
-                <div className="mt-1 text-xs text-white/50">
-                  Keep it simple. Know your limits.
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </PreviewFrame>
-    )
-  }
-
-  if (feature.key === "backtester") {
-    return (
-      <PreviewFrame
-        title={feature.previewTitle}
-        subtitle={feature.previewSubtitle}
-        hint={feature.colorHint}
-      >
-        <div className="grid gap-4 md:grid-cols-4">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 md:col-span-3">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="text-xs text-white/60">Trade Log</div>
-              <Chip>0 friction</Chip>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="rounded-xl border border-white/10 bg-black/40 p-3"
-                >
-                  <div className="text-xs text-white/50">Entry</div>
-                  <div className="mt-1 text-sm font-semibold text-white">
-                    {i % 2 ? "Breakout" : "Pullback"}
-                  </div>
-                  <div className="mt-2 text-xs text-white/50">
-                    R: {i % 3 === 0 ? "+1.2" : i % 3 === 1 ? "-0.6" : "+0.3"}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-xs text-white/60">Dataset</div>
-            <div className="mt-3 space-y-2">
-              <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-                <div className="text-xs text-white/50">Trades logged</div>
-                <div className="mt-1 text-lg font-semibold text-white">142</div>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-                <div className="text-xs text-white/50">Avg R</div>
-                <div className="mt-1 text-lg font-semibold text-white">0.41</div>
-              </div>
-              <div className="rounded-xl border border-purple-400/20 bg-purple-400/10 p-3">
-                <div className="text-xs text-purple-100/70">Best setup</div>
-                <div className="mt-1 text-sm font-semibold known text-purple-200">
-                  London pullback
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </PreviewFrame>
-    )
-  }
-
-  if (feature.key === "calendar") {
-    return (
-      <PreviewFrame
-        title={feature.previewTitle}
-        subtitle={feature.previewSubtitle}
-        hint={feature.colorHint}
-      >
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 md:col-span-2">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="text-xs text-white/60">High impact events</div>
-              <Chip>filtered</Chip>
-            </div>
-
-            <div className="space-y-2">
-              {[
-                { t: "CPI (US)", c: "USD", i: "High", ok: false },
-                { t: "BoE Rate Decision", c: "GBP", i: "High", ok: false },
-                { t: "Retail Sales (AU)", c: "AUD", i: "Medium", ok: true },
-                { t: "Unemployment (CA)", c: "CAD", i: "High", ok: false },
-              ].map((e) => (
-                <div
-                  key={e.t}
-                  className="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-3"
-                >
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-white">
-                      {e.t}
-                    </div>
-                    <div className="mt-0.5 text-xs text-white/50">
-                      Currency: {e.c} · Impact: {e.i}
-                    </div>
-                  </div>
-                  <span
-                    className={clsx(
-                      "ml-3 shrink-0 rounded-full border px-3 py-1 text-xs font-semibold",
-                      e.ok
-                        ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-200"
-                        : "border-red-400/20 bg-red-400/10 text-red-200"
-                    )}
-                  >
-                    {e.ok ? "OK" : "AVOID"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-xs text-white/60">Your symbols</div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Chip>EURUSD</Chip>
-              <Chip>GBPUSD</Chip>
-              <Chip>NAS100</Chip>
-              <Chip>XAUUSD</Chip>
-              <Chip>US30</Chip>
-            </div>
-
-            <div className="mt-4 rounded-xl border border-red-400/20 bg-red-400/10 p-3">
-              <div className="text-xs text-red-100/70">Warning</div>
-              <div className="mt-1 text-sm font-semibold text-red-200">
-                High-impact USD event soon
-              </div>
-              <div className="mt-1 text-xs text-red-100/60">
-                Avoid USD pairs during release window.
-              </div>
-            </div>
-
-            <div className="mt-4 space-y-2">
-              <SkeletonLine w="w-full" />
-              <SkeletonLine w="w-5/6" />
-              <SkeletonLine w="w-2/3" />
-            </div>
-          </div>
-        </div>
-      </PreviewFrame>
-    )
-  }
-
-  // fundamentals
-  return (
-    <PreviewFrame
-      title={feature.previewTitle}
-      subtitle={feature.previewSubtitle}
-      hint={feature.colorHint}
-    >
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="text-xs text-white/60">Release summary</div>
-            <Chip>AI</Chip>
-          </div>
-          <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 p-3">
-            <div className="text-sm font-semibold text-emerald-200">
-              CPI came in hotter than expected
-            </div>
-            <div className="mt-1 text-xs text-emerald-100/70">
-              Higher inflation increases rate-hike probability.
-            </div>
-          </div>
-          <div className="mt-3 space-y-2">
-            <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-              <div className="text-xs text-white/50">Market reaction</div>
-              <div className="mt-1 text-sm font-semibold text-white">
-                USD strength · risk-off
-              </div>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-              <div className="text-xs text-white/50">Implication</div>
-              <div className="mt-1 text-sm font-semibold text-white">
-                Expect volatility on USD pairs
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="text-xs text-white/60">Why your technical failed</div>
-            <Chip>context</Chip>
-          </div>
-          <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-            <SkeletonLine w="w-5/6" />
-            <div className="mt-3 space-y-2">
-              <SkeletonLine w="w-full" />
-              <SkeletonLine w="w-11/12" />
-              <SkeletonLine w="w-10/12" />
-              <SkeletonLine w="w-9/12" />
-            </div>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Chip>liquidity</Chip>
-            <Chip>expectations</Chip>
-            <Chip>rate path</Chip>
-            <Chip>risk sentiment</Chip>
-          </div>
-        </div>
-      </div>
-    </PreviewFrame>
-  )
-}
 
 /* -------------------------------------------------------------------------------------------------
  * FAQ
@@ -940,6 +499,103 @@ function FAQItem({ item }: { item: FAQ }) {
     </div>
   )
 }
+
+function FeatureSlider({
+  activeKey,
+  onChange,
+}: {
+  activeKey: FeatureKey
+  onChange: (k: FeatureKey) => void
+}) {
+  return (
+    <div className="relative">
+      <div className="
+        flex gap-5
+        overflow-x-auto scrollbar-hide px-2
+        md:justify-center md:overflow-visible md:px-0
+      ">
+        {FEATURES.map((f) => {
+          const Icon = f.icon
+          const active = f.key === activeKey
+
+          return (
+            <button
+              key={f.key}
+              onClick={() => onChange(f.key)}
+              className="
+                group shrink-0
+                flex flex-col items-center gap-2
+                focus:outline-none
+              "
+            >
+              {/* Icon button */}
+              <div
+                className={clsx(
+                  "flex items-center justify-center rounded-2xl border transition-all",
+                  // 📱 Mobile size
+                  "h-14 w-14",
+                  // 🖥 Desktop size
+                  "md:h-24 md:w-24",
+                  active
+                    ? "border-emerald-400/40 bg-emerald-400/15"
+                    : "border-white/10 bg-white/[0.04] hover:bg-white/[0.07]"
+                )}
+              >
+                <div
+                  className={clsx(
+                    "flex items-center justify-center rounded-xl border transition-all",
+                    // 📱 Mobile
+                    "h-9 w-9",
+                    // 🖥 Desktop
+                    "md:h-16 md:w-16",
+                    active
+                      ? "border-emerald-400/40 bg-emerald-400/15"
+                      : "border-white/10 bg-white/5"
+                  )}
+                >
+                  <Icon
+                    className={clsx(
+                      // 📱 Mobile
+                      "h-5 w-5",
+                      // 🖥 Desktop
+                      "md:h-8 md:w-8",
+                      active ? "text-emerald-300" : "text-white/70"
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Label */}
+              <span
+                className={clsx(
+                  // 📱 Mobile label
+                  "text-xs",
+                  // 🖥 Desktop label
+                  "md:text-sm",
+                  "font-medium whitespace-nowrap transition",
+                  active ? "text-white" : "text-white/60"
+                )}
+              >
+                {f.name}
+              </span>
+
+              {/* Active indicator */}
+              {active && (
+                <span className="h-0.5 w-5 rounded-full bg-emerald-400" />
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Mobile fade hints */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-black to-transparent md:hidden" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-black to-transparent md:hidden" />
+    </div>
+  )
+}
+
+
 
 /* -------------------------------------------------------------------------------------------------
  * Landing Page
@@ -1069,194 +725,120 @@ export default function LandingPage() {
           </div>
         </Container>
       </section>
-
-      {/* Social proof / Values */}
-      <section className="mt-16 border-y border-white/10 bg-white/[0.02] py-10">
-        <Container>
-          <div className="grid gap-6 md:grid-cols-4">
-            {[
-              {
-                icon: ShieldAlert,
-                title: "No clutter",
-                desc: "Built to remove noise and keep traders consistent.",
-              },
-              {
-                icon: LineChart,
-                title: "Only what matters",
-                desc: "No 100-metric dashboards. Just performance truth.",
-              },
-              {
-                icon: Layers,
-                title: "All-in-one",
-                desc: "Journal + analytics + calculators + calendar.",
-              },
-              {
-                icon: HeartHandshake,
-                title: "Low price",
-                desc: "Stop paying for multiple tools and subscriptions.",
-              },
-            ].map((v) => (
-              <div
-                key={v.title}
-                className="rounded-2xl border border-white/10 bg-black/40 p-5"
-              >
-                <v.icon className="h-5 w-5 text-emerald-400" />
-                <div className="mt-3 text-sm font-semibold">{v.title}</div>
-                <div className="mt-1 text-sm text-white/60">{v.desc}</div>
-              </div>
-            ))}
+{/* Social proof / Values */}
+<section className="mt-16 border-y border-white/10 bg-white/[0.02] py-12">
+  <Container>
+    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      {[
+        {
+          icon: ShieldAlert,
+          title: "No clutter",
+          desc: "Designed to remove noise and keep execution consistent.",
+        },
+        {
+          icon: LineChart,
+          title: "Only what matters",
+          desc: "No bloated dashboards. Just performance truth.",
+        },
+        {
+          icon: Layers,
+          title: "All-in-one",
+          desc: "Journal, analytics, calculators, calendar — together.",
+        },
+        {
+          icon: HeartHandshake,
+          title: "Fair pricing",
+          desc: "One tool instead of multiple subscriptions.",
+        },
+      ].map((v) => (
+        <div
+          key={v.title}
+          className="rounded-2xl border border-white/10 bg-black/40 p-5"
+        >
+          <v.icon className="h-5 w-5 text-emerald-400" />
+          <div className="mt-3 text-sm font-semibold text-white">
+            {v.title}
           </div>
-        </Container>
-      </section>
-
-      {/* Tradexella-style feature switcher */}
-      <section id="features" className="py-20 md:py-24">
-        <Container>
-          <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-            <div>
-              <div className="text-xs font-semibold tracking-widest text-emerald-400">
-                FEATURES
-              </div>
-              <h2 className="mt-3 text-3xl font-semibold md:text-4xl">
-                Click a feature. See the vibe.
-              </h2>
-              <p className="mt-3 max-w-2xl text-white/60">
-                Everything is designed to be fast, clean, and practical — the opposite
-                of overcrowded competitor platforms.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Pill tone="neutral">No bloat</Pill>
-              <Pill tone="neutral">No distractions</Pill>
-              <Pill tone="neutral">Simple workflows</Pill>
-            </div>
+          <div className="mt-1 text-sm text-white/60">
+            {v.desc}
           </div>
+        </div>
+      ))}
+    </div>
+  </Container>
+</section>
 
-          <div className="mt-10 grid gap-6 lg:grid-cols-12">
-            {/* Left selector */}
-            <div className="lg:col-span-4">
-              <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-3">
-                {FEATURES.map((f) => {
-                  const isActive = f.key === activeKey
-                  const Icon = f.icon
-                  return (
-                    <button
-                      key={f.key}
-                      onClick={() => setActiveKey(f.key)}
-                      className={clsx(
-                        "group flex w-full items-start gap-3 rounded-2xl p-4 text-left transition",
-                        isActive
-                          ? "border border-emerald-400/20 bg-emerald-400/10"
-                          : "border border-transparent hover:bg-white/[0.03]"
-                      )}
-                    >
-                      <div
-                        className={clsx(
-                          "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border",
-                          isActive
-                            ? "border-emerald-400/20 bg-emerald-400/10"
-                            : "border-white/10 bg-white/5"
-                        )}
-                      >
-                        <Icon
-                          className={clsx(
-                            "h-4 w-4",
-                            isActive ? "text-emerald-200" : "text-white/60"
-                          )}
-                        />
-                      </div>
+{/* Feature switcher */}
+<section id="features" className="py-20 md:py-24">
+  <Container>
+    {/* Header */}
+    <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
+      <div>
+        <div className="text-xs font-semibold tracking-widest text-emerald-400">
+          FEATURES
+        </div>
+        <h2 className="mt-3 text-3xl font-semibold md:text-4xl">
+          Click a feature. See the vibe.
+        </h2>
+        <p className="mt-3 max-w-2xl text-white/60">
+          Everything is built to be fast, clean, and practical — the opposite
+          of overcrowded trading platforms.
+        </p>
+      </div>
 
-                      <div className="min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <div
-                            className={clsx(
-                              "truncate text-sm font-semibold",
-                              isActive ? "text-white" : "text-white/80"
-                            )}
-                          >
-                            {f.name}
-                          </div>
-                          <ChevronRight
-                            className={clsx(
-                              "h-4 w-4 shrink-0 transition",
-                              isActive
-                                ? "text-emerald-200"
-                                : "text-white/30 group-hover:text-white/60"
-                            )}
-                          />
-                        </div>
-                        <div
-                          className={clsx(
-                            "mt-1 text-xs leading-relaxed",
-                            isActive ? "text-white/60" : "text-white/45"
-                          )}
-                        >
-                          {f.tagline}
-                        </div>
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
+      <div className="flex flex-wrap gap-2">
+        <Pill tone="neutral">No bloat</Pill>
+        <Pill tone="neutral">No distractions</Pill>
+        <Pill tone="neutral">Simple workflows</Pill>
+      </div>
+    </div>
 
-              {/* Outcomes */}
-              <div className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-5">
-                <div className="text-sm font-semibold">What you get</div>
-                <div className="mt-3 space-y-2">
-                  {active.outcomes.map((o) => (
-                    <div key={o} className="flex items-start gap-2 text-sm text-white/60">
-                      <Check className="mt-0.5 h-4 w-4 text-emerald-400" />
-                      <span>{o}</span>
-                    </div>
-                  ))}
-                </div>
+    {/* Content */}
+    <div className="mt-6 space-y-6">
+      {/* Feature slider rail */}
+      <div className="rounded-2xl border border-black bg-white/[0.02] px-4 py-3">
+        <FeatureSlider
+          activeKey={activeKey}
+          onChange={setActiveKey}
+        />
+      </div>
 
-                <Divider className="my-5" />
+      {/* Sliding preview */}
+      <div className="relative overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={active.key}
+            initial={{ x: 60, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -60, opacity: 0 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+          >
+            <FeaturePreviewImage feature={active} />
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
-                <Link
-                  href={buildSignupHref(trialEmail)}
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-300 hover:text-emerald-200"
-                >
-                  Start free trial <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </div>
-
-            {/* Right preview */}
-            <div className="lg:col-span-8">
-              <AnimatePresence mode="wait">
-              <motion.div
-                key={active.key}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.25 }}
-              >
-                <FeaturePreviewImage feature={active} />
-              </motion.div>
-            </AnimatePresence>
-
-              {/* Bullets */}
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
-                {active.bullets.map((b, idx) => (
-                  <div
-                    key={idx}
-                    className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-xs font-semibold text-white/70">
-                        {idx + 1}
-                      </span>
-                      <div className="text-sm text-white/70">{b}</div>
-                    </div>
-                  </div>
-                ))}
+      {/* Feature bullets */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {active.bullets.map((b, idx) => (
+          <div
+            key={idx}
+            className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+          >
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-xs font-semibold text-white/70">
+                {idx + 1}
+              </span>
+              <div className="text-sm text-white/70">
+                {b}
               </div>
             </div>
           </div>
-        </Container>
-      </section>
+        ))}
+      </div>
+    </div>
+  </Container>
+</section>
 
       {/* How it works */}
       <section id="how" className="border-t border-white/10 bg-white/[0.02] py-20 md:py-24">
@@ -1355,11 +937,18 @@ export default function LandingPage() {
     </div>
 
     <div className="mx-auto mt-12 max-w-xl">
-      <div className="relative rounded-3xl border border-emerald-400/25 bg-emerald-400/10 p-8 shadow-[0_30px_90px_rgba(0,0,0,0.7)]">
+      <div className="relative rounded-3xl border border-emerald-400/25 bg-emerald-400/10 p-6 md:p-8 shadow-[0_30px_90px_rgba(0,0,0,0.7)]">
+
         {/* Badge */}
-        <div className="absolute right-6 top-6 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-200">
-          14-day free trial
-        </div>
+        {/* Badge */}
+{/* Badge */}
+<div className="mb-5 flex justify-center md:absolute md:right-6 md:top-6 md:mb-0">
+  <div className="inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-200">
+    14-day free trial
+  </div>
+</div>
+
+
 
         <div className="text-center">
           <div className="text-sm font-semibold text-emerald-100/80">
@@ -1428,17 +1017,24 @@ export default function LandingPage() {
                 EDGELY.AI is built for you.
               </p>
 
-              <div className="mt-6 rounded-3xl border border-white/10 bg-black/40 p-5">
-                <div className="flex items-center gap-3">
-                  <PhoneCall className="h-5 w-5 text-emerald-400" />
-                  <div>
-                    <div className="text-sm font-semibold">Need help?</div>
-                    <div className="text-xs text-white/50">
-                      Start the trial, then message support from inside the app.
-                    </div>
-                  </div>
-                </div>
-              </div>
+<div className="mt-6 rounded-3xl border border-white/10 bg-black/40 p-5">
+  <div className="flex items-center gap-3">
+    <Mail className="h-5 w-5 text-emerald-400" />
+    <div>
+      <div className="text-sm font-semibold">Need help?</div>
+      <div className="text-xs text-white/50">
+        Email us at{" "}
+        <a
+          href="mailto:support@edgely.ai"
+          className="font-medium text-emerald-300 hover:text-emerald-200"
+        >
+          support@edgely.ai
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
             </div>
 
             <div className="lg:col-span-8">
@@ -1526,9 +1122,15 @@ export default function LandingPage() {
               <div>
                 <div className="text-sm font-semibold">Legal</div>
                 <div className="mt-3 space-y-2 text-sm text-white/60">
-                  <span className="block text-white/40">Terms (add later)</span>
-                  <span className="block text-white/40">Privacy (add later)</span>
-                  <span className="block text-white/40">Disclaimer (add later)</span>
+                      <Link href="/terms" className="block hover:text-white">
+                        Terms of Service
+                      </Link>
+                      <Link href="/privacy" className="block hover:text-white">
+                        Privacy Policy
+                      </Link>
+                      <Link href="/disclaimer" className="block hover:text-white">
+                        Disclaimer
+                      </Link>
                 </div>
               </div>
             </div>
