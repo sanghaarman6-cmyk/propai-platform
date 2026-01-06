@@ -83,7 +83,7 @@ export default function SignupPage() {
       return
     }
 
-    router.replace("/app/dashboard")
+    router.replace("/app/fundamentals")
   }
 
   return (

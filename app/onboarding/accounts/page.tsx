@@ -163,7 +163,7 @@ export default function AccountsOnboardingPage() {
 
               <div className="flex justify-between">
                 <button
-                  onClick={() => router.push("/app/dashboard")}
+                  onClick={() => router.push("/app/fundamentals")}
                   className="text-xs text-text-muted hover:text-text-primary"
                 >
                   Skip for now

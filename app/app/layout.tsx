@@ -11,12 +11,18 @@ import PaywallOverlay from "@/components/PaywallOverlay"
 
 import { useLoadAccounts } from "@/lib/hooks/useLoadAccounts"
 import { useIsAuthed } from "@/lib/auth/useIsAuthed"
+import { useState } from "react"
+import { useIsMobile } from "@/lib/hooks/useIsMobile"
+import { Menu } from "lucide-react"
 
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const isMobile = useIsMobile()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
   const pathname = usePathname()
   const router = useRouter()
   const { hasAccess } = useBillingStatus()
@@ -31,14 +37,49 @@ export default function AppLayout({
 
   return (
     <MobileWarningGate>
-    <div className="flex h-screen overflow-hidden">
-      <ToastHost />
+      <div className="flex h-screen overflow-hidden">
+        <ToastHost />
 
-      {/* ✅ Sidebar stays clickable */}
-      <Sidebar />
+        {/* 🖥 Desktop sidebar */}
+        {!isMobile && (
+          <aside className="shrink-0">
+            <Sidebar />
+          </aside>
+        )}
 
-      {/* ✅ Content area only */}
-      <div className="relative flex flex-1 flex-col overflow-hidden">
+        {/* 📱 Mobile sidebar drawer */}
+        {isMobile && sidebarOpen && (
+          <div className="fixed inset-0 z-50 flex">
+            {/* backdrop */}
+            <div
+              className="absolute inset-0 bg-black/70 backdrop-blur"
+              onClick={() => setSidebarOpen(false)}
+            />
+
+            {/* drawer */}
+            <aside className="relative z-50 w-64 bg-bg-panel">
+              <Sidebar />
+            </aside>
+          </div>
+        )}
+
+        {/* Main content */}
+        <div className="relative flex flex-1 flex-col overflow-hidden">
+          {isMobile && (
+  <div className="flex items-center gap-3 border-b border-border bg-bg-panel px-4 py-3">
+    <button
+      onClick={() => setSidebarOpen(true)}
+      className="rounded-xl border border-border bg-black/40 p-2"
+    >
+      <Menu size={18} />
+    </button>
+
+    <span className="text-xs font-semibold tracking-widest text-emerald-400">
+      EDGELY.AI
+    </span>
+  </div>
+)}
+
         <motion.main
           key={pathname}
           initial={{ opacity: 0, y: 6 }}

@@ -34,7 +34,7 @@ export default function LoginPage() {
       return
     }
 
-    router.push("/app/dashboard")
+    router.push("/app/fundamentals")
   }
 
   async function sendReset() {

@@ -163,7 +163,7 @@ export default function AccountSetupForm({
         if (editMode) {
         onDone?.()
         } else {
-        router.replace("/app/dashboard")
+        router.replace("/app/fundamentals")
         }
     } catch (err: any) {
         useToastStore.getState().pushToast({

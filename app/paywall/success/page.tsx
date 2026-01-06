@@ -8,10 +8,10 @@ export default function PaywallSuccessPage() {
         </p>
 
         <a
-          href="/app/dashboard"
+          href="/app/fundamentals"
           className="mt-6 inline-block rounded-xl bg-emerald-500 px-6 py-3 font-semibold text-black"
         >
-          Go to dashboard
+          Go to Edgely!
         </a>
       </div>
     </div>

@@ -53,7 +53,7 @@ const NAV: NavItem[] = [
   { label: "News Calendar", href: "/app/calendar", icon: NewspaperIcon, group: "TOOLS" },
 
   { label: "Edge AI", href: "/app/guru", icon: Bot, group: "AI & RULES", accent: "green" },
-  { label: "Fundamentals", href: "/app/dashboard", icon: Globe2, group: "AI & RULES" },
+  { label: "Fundamentals", href: "/app/fundamentals", icon: Globe2, group: "AI & RULES" },
   { label: "Rules", href: "/app/propfirm", icon: Shield, group: "AI & RULES" },
 
   { label: "Accounts", href: "/app/accounts", icon: UserPen, group: "ACCOUNT" },

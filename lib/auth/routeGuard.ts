@@ -43,7 +43,7 @@ export function getRedirectForPath(
      4️⃣ ACCOUNT READY → keep user out of onboarding
   ------------------------------------------------------------------ */
   if (pathname.startsWith("/onboarding")) {
-    return "/app/dashboard"
+    return "/app/fundamentals"
   }
 
   return null
