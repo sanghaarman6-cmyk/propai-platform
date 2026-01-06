@@ -1,10 +1,44 @@
 "use client"
 
+/**
+ * ============================================================
+ * JOURNAL PAGE — PART 1 / 3
+ * ------------------------------------------------------------
+ * Scope of this file:
+ * - Imports
+ * - Types
+ * - Supabase client
+ * - Date utilities
+ * - Math / stats helpers
+ * - DB → UI transformers
+ * - Shared UI primitives (cn, pills, cards, skeletons)
+ *
+ * ❗ NO calendar UI yet
+ * ❗ NO modals yet
+ * ❗ NO page JSX yet
+ *
+ * This file COMPILES on its own when combined with Part 2 + 3
+ * ============================================================
+ */
+import { Cell } from "recharts"
+
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ReferenceLine,
+} from "recharts"
+
 import React, { useEffect, useMemo, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { createBrowserClient } from "@supabase/auth-helpers-nextjs"
 import { useMT5Store } from "@/lib/mt5Store"
 import JournalAIInsightCard from "@/components/JournalAIInsightCard"
+import { ArrowUpRight, ArrowDownRight } from "lucide-react"
 
 import {
   ChevronLeft,
@@ -19,9 +53,108 @@ import {
   X,
 } from "lucide-react"
 
-/* -------------------------------- Types -------------------------------- */
 
-type Trade = {
+function MobileKPI({
+  label,
+  value,
+  tone = "neutral",
+  pill,
+}: {
+  label: string
+  value: React.ReactNode
+  tone?: "good" | "bad" | "neutral"
+  pill?: React.ReactNode
+}) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col justify-center rounded-xl px-2 py-2",
+        "bg-white/[0.03]",
+        "shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset]"
+      )}
+    >
+      <div
+        className={cn(
+          "text-sm font-semibold leading-none",
+          tone === "good" && "text-emerald-300",
+          tone === "bad" && "text-red-300"
+        )}
+      >
+        {value}
+      </div>
+
+      <div className="mt-0.5 text-[10px] text-neutral-400 truncate">
+        {label}
+      </div>
+
+      {pill && (
+        <div className="mt-1 scale-[0.85] origin-left">
+          {pill}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function TopKPI({
+  icon,
+  title,
+  value,
+  valueTone = "neutral",
+  subtitle,
+  pill,
+}: {
+  icon: React.ReactNode
+  title: string
+  value: React.ReactNode
+  valueTone?: "good" | "bad" | "neutral"
+  subtitle?: string
+  pill?: React.ReactNode
+}) {
+  const ring =
+    valueTone === "good"
+      ? "shadow-[0_0_0_1px_rgba(52,211,153,0.18)_inset]"
+      : valueTone === "bad"
+      ? "shadow-[0_0_0_1px_rgba(248,113,113,0.18)_inset]"
+      : "shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset]"
+
+  return (
+    <div
+      className={cn(
+        "relative flex items-start justify-between gap-4 rounded-3xl",
+        "bg-white/[0.03] backdrop-blur",
+        "p-4",
+        ring
+      )}
+    >
+      <div className="flex items-start gap-3 min-w-0">
+        <div className="rounded-2xl bg-white/[0.06] p-2">
+          {icon}
+        </div>
+
+        <div className="min-w-0">
+          <div className="text-xs text-neutral-400">{title}</div>
+          <div className="mt-1 text-xl font-semibold tracking-tight">
+            {value}
+          </div>
+          {subtitle && (
+            <div className="mt-1 text-xs text-neutral-400">
+              {subtitle}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {pill && <div className="shrink-0">{pill}</div>}
+    </div>
+  )
+}
+
+/* ========================================================================
+   TYPES
+   ======================================================================== */
+
+export type Trade = {
   id: string
   symbol: string
   side: "long" | "short"
@@ -30,12 +163,12 @@ type Trade = {
   closedAt: Date
 }
 
-type DayStats = {
+export type DayStats = {
   date: Date
   trades: Trade[]
 }
 
-type WeekSummary = {
+export type WeekSummary = {
   label: string
   start: Date
   end: Date
@@ -43,41 +176,45 @@ type WeekSummary = {
   trades: number
 }
 
-/* ------------------------------ Supabase -------------------------------- */
+/* ========================================================================
+   SUPABASE CLIENT
+   ======================================================================== */
 
-const supabase = createBrowserClient(
+export const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-/* ------------------------------ Date utils ------------------------------ */
+/* ========================================================================
+   DATE UTILITIES
+   ======================================================================== */
 
-function pad2(n: number) {
+export function pad2(n: number) {
   return n < 10 ? `0${n}` : `${n}`
 }
 
-function ymdKey(d: Date) {
+export function ymdKey(d: Date) {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
 }
 
-function addDays(d: Date, n: number) {
+export function addDays(d: Date, n: number) {
   const x = new Date(d)
   x.setDate(x.getDate() + n)
   return x
 }
 
-function startOfMonth(d: Date) {
+export function startOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), 1)
 }
 
-function startOfWeekSunday(d: Date) {
+export function startOfWeekSunday(d: Date) {
   const x = new Date(d)
   x.setDate(x.getDate() - x.getDay())
   x.setHours(0, 0, 0, 0)
   return x
 }
 
-function monthGridDays(month: Date) {
+export function monthGridDays(month: Date) {
   const days: Date[] = []
   let cur = startOfWeekSunday(startOfMonth(month))
   for (let i = 0; i < 42; i++) {
@@ -87,19 +224,23 @@ function monthGridDays(month: Date) {
   return days
 }
 
-function isSameMonth(a: Date, b: Date) {
+export function isSameMonth(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()
 }
 
-function formatMonthTitle(d: Date) {
+export function formatMonthTitle(d: Date) {
   return d.toLocaleString("default", { month: "long", year: "numeric" })
 }
 
-function formatRangeShort(a: Date, b: Date) {
+export function formatRangeShort(a: Date, b: Date) {
   return `${a.toLocaleDateString()} – ${b.toLocaleDateString()}`
 }
 
-function money(n: number, decimals = 0) {
+/* ========================================================================
+   MONEY / STATS HELPERS
+   ======================================================================== */
+
+export function money(n: number, decimals = 0) {
   const sign = n >= 0 ? "+" : "-"
   return `${sign}$${Math.abs(n).toLocaleString(undefined, {
     minimumFractionDigits: decimals,
@@ -107,50 +248,29 @@ function money(n: number, decimals = 0) {
   })}`
 }
 
-/* ------------------------- DB → UI helpers ------------------------------ */
-
-function buildDayMap(rows: any[]): Record<string, DayStats> {
-  const map: Record<string, DayStats> = {}
-
-  for (const r of rows) {
-    const closedAt = new Date(r.closed_at)
-    const key = ymdKey(closedAt)
-
-    if (!map[key]) map[key] = { date: closedAt, trades: [] }
-
-    map[key].trades.push({
-      id: r.id,
-      symbol: r.symbol,
-      side: r.side,
-      pnl: Number(r.pnl),
-      time: closedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      closedAt,
-    })
-  }
-
-  for (const k of Object.keys(map)) {
-    map[k].trades.sort((a, b) => a.closedAt.getTime() - b.closedAt.getTime())
-  }
-
-  return map
+export function compactMoney(n: number) {
+  const abs = Math.abs(n)
+  if (abs >= 1_000_000) return `${n < 0 ? "-" : ""}${(abs / 1_000_000).toFixed(1)}M`
+  if (abs >= 1_000) return `${n < 0 ? "-" : ""}${(abs / 1_000).toFixed(1)}k`
+  return `${n < 0 ? "-" : ""}${abs}`
 }
 
-function sumPnL(trades: Trade[]) {
+export function sumPnL(trades: Trade[]) {
   return trades.reduce((a, t) => a + t.pnl, 0)
 }
 
-function computeWinPct(trades: Trade[]) {
+export function computeWinPct(trades: Trade[]) {
   if (!trades.length) return 0
   const wins = trades.filter((t) => t.pnl > 0).length
   return (wins / trades.length) * 100
 }
 
-function computeAvg(trades: Trade[]) {
+export function computeAvg(trades: Trade[]) {
   if (!trades.length) return 0
   return sumPnL(trades) / trades.length
 }
 
-function computeMonthKPIs(dayMap: Record<string, DayStats>) {
+export function computeMonthKPIs(dayMap: Record<string, DayStats>) {
   const trades = Object.values(dayMap).flatMap((d) => d.trades)
   const net = sumPnL(trades)
   const winPct = computeWinPct(trades)
@@ -160,9 +280,50 @@ function computeMonthKPIs(dayMap: Record<string, DayStats>) {
   return { trades, net, winPct, avg, wins, losses }
 }
 
+/* ========================================================================
+   DB → UI TRANSFORMERS
+   ======================================================================== */
 
+export function buildDayMap(rows: any[]): Record<string, DayStats> {
+  const map: Record<string, DayStats> = {}
 
-function computeWeeks(month: Date, map: Record<string, DayStats>): WeekSummary[] {
+  for (const r of rows) {
+    const closedAt = new Date(r.closed_at)
+    const key = ymdKey(closedAt)
+
+    if (!map[key]) {
+      map[key] = {
+        date: closedAt,
+        trades: [],
+      }
+    }
+
+    map[key].trades.push({
+      id: r.id,
+      symbol: r.symbol,
+      side: r.side,
+      pnl: Number(r.pnl),
+      time: closedAt.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      closedAt,
+    })
+  }
+
+  for (const k of Object.keys(map)) {
+    map[k].trades.sort(
+      (a, b) => a.closedAt.getTime() - b.closedAt.getTime()
+    )
+  }
+
+  return map
+}
+
+export function computeWeeks(
+  month: Date,
+  map: Record<string, DayStats>
+): WeekSummary[] {
   const weeks: WeekSummary[] = []
   let cur = startOfWeekSunday(startOfMonth(month))
   let idx = 1
@@ -194,7 +355,11 @@ function computeWeeks(month: Date, map: Record<string, DayStats>): WeekSummary[]
   return weeks
 }
 
-function getTradesInRange(dayMap: Record<string, DayStats>, start: Date, end: Date) {
+export function getTradesInRange(
+  dayMap: Record<string, DayStats>,
+  start: Date,
+  end: Date
+) {
   const trades: Trade[] = []
   const s = new Date(start)
   s.setHours(0, 0, 0, 0)
@@ -212,13 +377,15 @@ function getTradesInRange(dayMap: Record<string, DayStats>, start: Date, end: Da
   return trades
 }
 
-/* ------------------------------ UI bits -------------------------------- */
+/* ========================================================================
+   UI PRIMITIVES
+   ======================================================================== */
 
-function cn(...xs: Array<string | false | null | undefined>) {
+export function cn(...xs: Array<string | false | null | undefined>) {
   return xs.filter(Boolean).join(" ")
 }
 
-function Pill({
+export function Pill({
   children,
   tone = "neutral",
 }: {
@@ -227,21 +394,21 @@ function Pill({
 }) {
   const cls =
     tone === "good"
-      ? "bg-emerald-500/10 text-emerald-200 shadow-[0_0_0_1px_rgba(52,211,153,0.14)_inset]"
+      ? "bg-emerald-500/10 text-emerald-300 shadow-[0_0_0_1px_rgba(52,211,153,0.18)_inset]"
       : tone === "bad"
-      ? "bg-red-500/10 text-red-200 shadow-[0_0_0_1px_rgba(248,113,113,0.14)_inset]"
+      ? "bg-red-500/10 text-red-300 shadow-[0_0_0_1px_rgba(248,113,113,0.18)_inset]"
       : tone === "violet"
-      ? "bg-violet-500/10 text-violet-200 shadow-[0_0_0_1px_rgba(167,139,250,0.18)_inset]"
-      : "bg-white/[0.04] text-neutral-200 shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset]"
+      ? "bg-violet-500/10 text-violet-300 shadow-[0_0_0_1px_rgba(167,139,250,0.18)_inset]"
+      : "bg-white/[0.04] text-neutral-300 shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset]"
 
   return (
-    <div className={cn("inline-flex items-center gap-2 rounded-2xl px-3 py-1 text-xs", cls)}>
+    <div className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium", cls)}>
       {children}
     </div>
   )
 }
 
-function SoftCard({
+export function SoftCard({
   children,
   className,
 }: {
@@ -251,8 +418,9 @@ function SoftCard({
   return (
     <div
       className={cn(
-        "rounded-3xl bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset]",
-        "backdrop-blur supports-[backdrop-filter]:bg-white/[0.025]",
+        "rounded-3xl bg-white/[0.035]",
+        "shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset]",
+        "backdrop-blur-xl",
         className
       )}
     >
@@ -261,43 +429,291 @@ function SoftCard({
   )
 }
 
-function MetricCard({
-  icon,
-  title,
-  value,
-  sub,
-  accent,
-  right,
+export function SkeletonRow() {
+  return (
+    <div className="animate-pulse space-y-3">
+      <div className="h-4 w-36 rounded bg-white/10" />
+      <div className="h-10 w-full rounded-2xl bg-white/10" />
+      <div className="h-10 w-full rounded-2xl bg-white/10" />
+      <div className="h-10 w-full rounded-2xl bg-white/10" />
+    </div>
+  )
+}
+
+/**
+ * ============================================================
+ * END OF PART 1
+ * ============================================================
+ */
+/**
+ * ============================================================
+ * JOURNAL PAGE — PART 2 / 3
+ * ------------------------------------------------------------
+ * Scope of this file:
+ * - Month header (Tradezella-style)
+ * - Monthly stats bar
+ * - Fixed-height calendar grid (NO squishing)
+ * - Desktop + mobile responsive calendar UI
+ *
+ * ❗ NO modals yet
+ * ❗ NO page export yet
+ *
+ * This file ASSUMES Part 1 is pasted ABOVE it
+ * ============================================================
+ */
+
+export function JournalCalendarSection({
+  month,
+  setMonth,
+  gridDays,
+  dayMap,
+  pnlAbsMax,
+  onSelectDay,
 }: {
-  icon: React.ReactNode
-  title: string
-  value: React.ReactNode
-  sub?: React.ReactNode
-  accent?: "good" | "bad" | "neutral"
-  right?: React.ReactNode
+  month: Date
+  setMonth: (d: Date) => void
+  gridDays: Date[]
+  dayMap: Record<string, DayStats>
+  pnlAbsMax: number
+  onSelectDay: (key: string) => void
 }) {
-  const ring =
-    accent === "good"
-      ? "shadow-[0_0_0_1px_rgba(52,211,153,0.14)_inset]"
-      : accent === "bad"
-      ? "shadow-[0_0_0_1px_rgba(248,113,113,0.14)_inset]"
-      : "shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset]"
+  const monthNet = useMemo(() => {
+    return Object.values(dayMap).reduce((acc, d) => acc + sumPnL(d.trades), 0)
+  }, [dayMap])
+
+  const activeDays = useMemo(() => Object.keys(dayMap).length, [dayMap])
 
   return (
-    <div className={cn("rounded-3xl bg-neutral-950/55 p-4", ring)}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3 min-w-0">
-          <div className="mt-0.5 rounded-2xl bg-white/[0.04] p-2 shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset]">
-            {icon}
+    <SoftCard className="p-4 sm:p-6">
+      {/* ================= HEADER ================= */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() =>
+              setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))
+            }
+            className="rounded-xl p-2 bg-white/[0.05] hover:bg-white/[0.08]"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+
+          <div className="text-lg sm:text-xl font-semibold">
+            {formatMonthTitle(month)}
           </div>
+
+          <button
+            onClick={() =>
+              setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))
+            }
+            className="rounded-xl p-2 bg-white/[0.05] hover:bg-white/[0.08]"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Pill tone={monthNet >= 0 ? "good" : "bad"}>
+            Monthly stats: {compactMoney(monthNet)}
+          </Pill>
+          <Pill>{activeDays} days</Pill>
+        </div>
+      </div>
+
+      {/* ================= WEEKDAYS ================= */}
+      <div className="grid grid-cols-7 mb-2 text-[11px] text-neutral-400">
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+          <div key={d} className="px-1 text-center">
+            {d}
+          </div>
+        ))}
+      </div>
+
+      {/* ================= CALENDAR GRID ================= */}
+      <div className="grid grid-cols-7 gap-[6px] sm:gap-2">
+        {gridDays.map((d) => {
+          const key = ymdKey(d)
+          const data = dayMap[key]
+          const pnl = data ? sumPnL(data.trades) : null
+          const trades = data?.trades.length ?? 0
+          const inMonth = isSameMonth(d, month)
+
+          const intensity =
+            pnl === null ? 0 : Math.min(1, Math.abs(pnl) / pnlAbsMax)
+
+          const bg =
+            pnl === null
+              ? "bg-white/[0.02]"
+              : pnl >= 0
+              ? "bg-emerald-500/10"
+              : "bg-red-500/10"
+
+          const ring =
+            pnl === null
+              ? "shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset]"
+              : pnl >= 0
+              ? "shadow-[0_0_0_1px_rgba(52,211,153,0.3)_inset]"
+              : "shadow-[0_0_0_1px_rgba(248,113,113,0.3)_inset]"
+
+          return (
+            <button
+              key={key}
+              onClick={() => onSelectDay(key)}
+              className={cn(
+                "relative rounded-2xl transition active:scale-[0.97]",
+                "flex flex-col justify-between",
+                "h-[96px] sm:h-[112px]", // 🔒 FIXED HEIGHT
+                "px-2 py-2 text-left",
+                bg,
+                ring,
+                inMonth ? "opacity-100" : "opacity-30"
+              )}
+              style={{
+                backgroundImage:
+                  pnl === null
+                    ? undefined
+                    : pnl >= 0
+                    ? `radial-gradient(circle at 20% 15%, rgba(16,185,129,${
+                        0.15 + intensity * 0.25
+                      }), rgba(0,0,0,0) 60%)`
+                    : `radial-gradient(circle at 20% 15%, rgba(239,68,68,${
+                        0.15 + intensity * 0.25
+                      }), rgba(0,0,0,0) 60%)`,
+              }}
+            >
+              {/* DATE */}
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] font-medium">
+                  {d.getDate()}
+                </span>
+                {trades > 0 && (
+                  <span className="text-[10px] text-neutral-400">
+                    {trades}
+                  </span>
+                )}
+              </div>
+
+              {/* PNL */}
+              <div className="mt-auto">
+                <div
+  className={cn(
+    // 👇 responsive font sizing instead of truncation
+    "font-semibold tabular-nums",
+    "text-[11px] sm:text-sm",
+    "leading-[1.1]",
+    pnl === null
+      ? "opacity-0"
+      : pnl >= 0
+      ? "text-emerald-300"
+      : "text-red-300"
+  )}
+>
+  {pnl !== null ? `$${compactMoney(pnl)}` : "—"}
+</div>
+
+
+                <div
+                  className={cn(
+                    "text-[10px] text-neutral-400",
+                    trades === 0 && "opacity-0"
+                  )}
+                >
+                  {trades} {trades === 1 ? "trade" : "trades"}
+                </div>
+              </div>
+            </button>
+          )
+        })}
+      </div>
+    </SoftCard>
+  )
+}
+
+/**
+ * ============================================================
+ * END OF PART 2
+ * ============================================================
+ */
+/**
+ * ============================================================
+ * JOURNAL PAGE — PART 3 / 3
+ * ------------------------------------------------------------
+ * Scope of this file:
+ * - Weekly rail (click week → modal)
+ * - Day modal + Week modal (scrollable trades)
+ * - Trades list UI
+ * - Full JournalPage export (assembled)
+ *
+ * This file ASSUMES Part 1 + Part 2 are pasted ABOVE it
+ * ============================================================
+ */
+
+/* ========================================================================
+   SMALL UI PIECES (LISTS / MODALS)
+   ======================================================================== */
+
+function TradesList({ trades }: { trades: Trade[] }) {
+  return (
+    <div className="space-y-2">
+      {trades.map((t) => (
+        <div
+          key={t.id}
+          className={cn(
+            "flex items-center justify-between gap-3 rounded-2xl px-3 py-2",
+            "bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset]"
+          )}
+        >
           <div className="min-w-0">
-            <div className="text-xs text-neutral-400">{title}</div>
-            <div className="mt-1 text-2xl font-semibold tracking-tight">{value}</div>
-            {sub ? <div className="mt-1 text-xs text-neutral-400">{sub}</div> : null}
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="truncate text-sm font-medium text-neutral-200">
+                {t.symbol}
+              </div>
+              <Pill tone={t.side === "long" ? "good" : "bad"}>
+                {t.side.toUpperCase()}
+              </Pill>
+            </div>
+            <div className="mt-0.5 text-[11px] text-neutral-400">{t.time}</div>
+          </div>
+
+          <div
+            className={cn(
+              "shrink-0 text-sm font-semibold tabular-nums",
+              t.pnl >= 0 ? "text-emerald-300" : "text-red-300"
+            )}
+          >
+            {money(t.pnl, 2)}
           </div>
         </div>
-        {right ? <div className="shrink-0">{right}</div> : null}
-      </div>
+      ))}
+
+      {!trades.length ? (
+        <div className="rounded-2xl bg-white/[0.03] p-4 text-sm text-neutral-400 shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset]">
+          No trades found.
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function MiniStat({
+  label,
+  value,
+  tone = "neutral",
+}: {
+  label: string
+  value: React.ReactNode
+  tone?: "neutral" | "good" | "bad"
+}) {
+  const ring =
+    tone === "good"
+      ? "shadow-[0_0_0_1px_rgba(52,211,153,0.18)_inset]"
+      : tone === "bad"
+      ? "shadow-[0_0_0_1px_rgba(248,113,113,0.18)_inset]"
+      : "shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset]"
+
+  return (
+    <div className={cn("rounded-2xl bg-white/[0.03] p-3", ring)}>
+      <div className="text-[11px] text-neutral-400">{label}</div>
+      <div className="mt-1 text-lg font-semibold tracking-tight">{value}</div>
     </div>
   )
 }
@@ -307,16 +723,15 @@ function ModalShell({
   subtitle,
   onClose,
   children,
-  widthClass = "max-w-[860px]",
+  widthClass = "max-w-[980px]",
 }: {
-  title?: string
+  title: string
   subtitle?: string
   onClose: () => void
   children: React.ReactNode
   widthClass?: string
 }) {
-
-  React.useEffect(() => {
+  useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose()
     }
@@ -326,97 +741,337 @@ function ModalShell({
 
   return (
     <AnimatePresence>
-      
       <motion.div
-        className="fixed inset-0 z-[9999] flex items-center justify-center"
-        initial={false}
+        className="fixed inset-0 z-[9999] flex items-center justify-center px-3 sm:px-6"
+        initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onMouseDown={onClose}
       >
-        {/* FULL-SCREEN BACKDROP */}
+        {/* Backdrop */}
         <motion.div
-        className="fixed inset-0 bg-black/60 backdrop-blur-xl"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0, ease: "easeOut" }}
-        onPointerDown={onClose}
-      />
-        <motion.div
+          className="absolute inset-0 bg-black/65 backdrop-blur-xl"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        />
 
+        {/* Card */}
+        <motion.div
+          onMouseDown={(e) => e.stopPropagation()}
+          initial={{ y: 14, opacity: 0, scale: 0.98 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          exit={{ y: 10, opacity: 0, scale: 0.98 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
           className={cn(
-            "relative w-full overflow-hidden rounded-3xl bg-[#0f0f0f]/95 text-white shadow-2xl shadow-black/50",
-            "shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset]",
+            "relative w-full overflow-hidden rounded-3xl bg-[#0b0b0b]/95 text-white",
+            "shadow-2xl shadow-black/60",
+            "shadow-[0_0_0_1px_rgba(255,255,255,0.10)_inset]",
             widthClass
           )}
-          onMouseDown={(e) => e.stopPropagation()}
         >
-          {title && (
-            <div className="flex items-start justify-between gap-4 border-b border-white/10 p-5">
-              <div className="min-w-0">
-                <div className="text-lg font-semibold">{title}</div>
-                {subtitle && (
-                  <div className="mt-1 text-sm text-neutral-400">{subtitle}</div>
-                )}
+          <div className="flex items-start justify-between gap-3 border-b border-white/10 p-4 sm:p-5">
+            <div className="min-w-0">
+              <div className="text-lg sm:text-xl font-semibold tracking-tight">
+                {title}
               </div>
-
-              <button
-                onClick={onClose}
-                className="rounded-full px-3 py-2 text-sm text-neutral-300 hover:bg-white/5 transition"
-              >
-                Close
-              </button>
+              {subtitle ? (
+                <div className="mt-1 text-sm text-neutral-400">{subtitle}</div>
+              ) : null}
             </div>
-          )}
-          <div className="p-5">{children}</div>
+
+            <button
+              onClick={onClose}
+              className="rounded-xl px-3 py-2 text-sm text-neutral-300 hover:bg-white/5 transition"
+              aria-label="Close"
+            >
+              Close
+            </button>
+          </div>
+
+          {/* Scrollable container */}
+          <div className="max-h-[82vh] overflow-y-auto p-4 sm:p-5">
+            {children}
+          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
   )
 }
 
-function TradesList({ trades }: { trades: Trade[] }) {
-  return (
-    <div className="space-y-2">
-      {trades.map((t) => (
-        <div
-          key={t.id}
-          className={cn(
-            "flex items-center justify-between rounded-2xl px-3 py-2",
-            "bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset]"
-          )}
-        >
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <div className="text-sm font-medium text-neutral-200">{t.symbol}</div>
-              <Pill tone={t.side === "long" ? "good" : "bad"}>{t.side.toUpperCase()}</Pill>
-            </div>
-            <div className="mt-1 text-xs text-neutral-400">{t.time}</div>
-          </div>
+/* ========================================================================
+   WEEKLY RAIL (RIGHT SIDE)
+   ======================================================================== */
 
-          <div className={cn("text-sm font-semibold", t.pnl >= 0 ? "text-emerald-300" : "text-red-300")}>
-            {money(t.pnl, 2)}
+function WeeklyRail({
+  month,
+  weeks,
+  monthNet,
+  loading,
+  activeAccountId,
+  onSelectWeek,
+}: {
+  month: Date
+  weeks: WeekSummary[]
+  monthNet: number
+  loading: boolean
+  activeAccountId: string | null
+  onSelectWeek: (w: WeekSummary) => void
+}) {
+  return (
+    <div className="space-y-4">
+      <SoftCard className="p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-neutral-200">
+              Weekly snapshots
+            </div>
+            <div className="mt-1 text-xs text-neutral-400">
+              Tap a week for the full breakdown + trades
+            </div>
+          </div>
+          <Pill>{weeks.length} weeks</Pill>
+        </div>
+
+        <div className="mt-4 space-y-2">
+          {!activeAccountId ? (
+            <div className="rounded-2xl bg-white/[0.03] p-4 text-sm text-neutral-400 shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset]">
+              Select an account to see weekly performance.
+            </div>
+          ) : loading ? (
+            <SkeletonRow />
+          ) : (
+            weeks.map((w) => {
+              const positive = w.pnl >= 0
+              const mag = Math.min(
+                1,
+                Math.abs(w.pnl) / Math.max(1, Math.abs(monthNet || 1))
+              )
+              return (
+                <button
+                  key={`${w.label}-${w.start.toISOString()}`}
+                  onClick={() => onSelectWeek(w)}
+                  className={cn(
+                    "w-full text-left rounded-3xl p-4 transition",
+                    "shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset]",
+                    "hover:bg-white/[0.04] active:scale-[0.99]",
+                    positive ? "bg-emerald-500/7" : "bg-red-500/7"
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm font-semibold text-neutral-200">
+                          {w.label}
+                        </div>
+                        <Pill tone={positive ? "good" : "bad"}>
+                          {positive ? "Profit" : "Loss"}
+                        </Pill>
+                      </div>
+                      <div className="mt-1 text-xs text-neutral-400">
+                        {formatRangeShort(w.start, w.end)}
+                      </div>
+                    </div>
+
+                    <div
+                      className={cn(
+                        "text-sm font-semibold tabular-nums",
+                        positive ? "text-emerald-300" : "text-red-300"
+                      )}
+                    >
+                      {money(w.pnl, 0)}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between text-xs text-neutral-400">
+                    <span>{w.trades} trades</span>
+                    <span
+  className={cn(
+    "flex items-center gap-1 text-xs font-medium",
+    positive ? "text-emerald-400" : "text-red-400"
+  )}
+>
+  {positive ? (
+    <ArrowUpRight className="h-3.5 w-3.5 stroke-[2.5]" />
+  ) : (
+    <ArrowDownRight className="h-3.5 w-3.5 stroke-[2.5]" />
+  )}
+  {Math.round(mag * 100)}%
+</span>
+
+                  </div>
+
+                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className={cn("h-full", positive ? "bg-emerald-400/70" : "bg-red-400/70")}
+                      style={{ width: `${Math.max(6, Math.round(mag * 100))}%` }}
+                    />
+                  </div>
+                </button>
+              )
+            })
+          )}
+        </div>
+      </SoftCard>
+
+      {/* AI month card */}
+      <JournalAIInsightCard
+        endpoint="/api/ai/journal/month"
+        payload={null as any} // actual payload is passed from page below; this is overwritten when used
+        disabled
+        cacheKey="journal:month:placeholder"
+      />
+    </div>
+  )
+}
+
+/* ========================================================================
+   PAGE (ASSEMBLED)
+   ======================================================================== */
+type PnLTrackerProps = {
+  dayMap: Record<string, DayStats>
+}
+function PnLTracker({ dayMap }: PnLTrackerProps) {
+  const data = Object.values(dayMap)
+    .map((d) => {
+      const pnl = d.trades.reduce((a, t) => a + t.pnl, 0)
+      return {
+        date: d.date.toLocaleDateString(undefined, { month: "short", day: "2-digit" }),
+        pnl,
+      }
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+  const profit = data.filter(d => d.pnl > 0).reduce((a, b) => a + b.pnl, 0)
+  const loss = data.filter(d => d.pnl < 0).reduce((a, b) => a + b.pnl, 0)
+  const net = profit + loss
+
+  const pct =
+    loss !== 0 ? ((profit / Math.abs(loss)) * 100).toFixed(2) : "0.00"
+
+  return (
+    <div className="rounded-2xl bg-neutral-900 border border-white/5 p-4">
+      {/* Header */}
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <div className="text-sm font-semibold text-white/70">
+            Profit / Loss
+          </div>
+          <div className="mt-1 text-2xl font-semibold text-white/70">
+            {net.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}{" "}
+            USD
           </div>
         </div>
-      ))}
-      {!trades.length ? <div className="text-sm text-neutral-400">No trades found.</div> : null}
+
+        <div className="flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-600">
+          <ArrowUpRight className="h-4 w-4" />
+          {pct}%
+        </div>
+      </div>
+
+      {/* Chart */}
+      
+
+      <div className="h-[220px] w-full pointer-events-none">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+  data={data}
+  barCategoryGap="55%"
+  barGap={2}
+
+>
+
+            <CartesianGrid
+  stroke="#374151"       // gray-700
+  strokeOpacity={0.25}
+  vertical={false}
+/>
+
+
+            <XAxis
+  dataKey="date"
+  tick={{ fontSize: 11, fill: "#9ca3af" }}   // gray-400
+  axisLine={false}
+  tickLine={false}
+/>
+
+            <YAxis
+  domain={[
+    (min: number) => Math.min(min, 0),
+    (max: number) => Math.max(max, 0),
+  ]}
+  tick={{ fontSize: 11, fill: "#9ca3af" }}
+  axisLine={false}
+  tickLine={false}
+/>
+
+
+
+            <ReferenceLine
+  y={0}
+  stroke="#6b7280"        // gray-500
+  strokeOpacity={0.8}
+  strokeWidth={1}
+/>
+
+
+
+
+
+
+
+<Bar
+  dataKey="pnl"
+  barSize={6}          // 👈 THIN bars (key)
+  minPointSize={3}
+  radius={[2, 2, 2, 2]}
+  isAnimationActive={false}
+  activeBar={false}
+>
+  {data.map((entry, index) => (
+    <Cell
+      key={`cell-${index}`}
+      fill={entry.pnl >= 0 ? "#22c55e" : "#1f2937"}
+    />
+  ))}
+</Bar>
+
+
+
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      
+
+      {/* Legend */}
+      <div className="mt-3 flex gap-6 text-sm">
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+          <span className="text-neutral-600">
+            Profit{" "}
+            <span className="font-medium text-white/70">
+              +{compactMoney(profit)} USD
+            </span>
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-neutral-800" />
+          <span className="text-neutral-600">
+            Loss{" "}
+            <span className="font-medium text-white/70">
+              {compactMoney(loss)} USD
+            </span>
+          </span>
+        </div>
+      </div>
     </div>
+    
   )
 }
-
-function SkeletonRow() {
-  return (
-    <div className="animate-pulse space-y-3">
-      <div className="h-5 w-44 rounded bg-white/10" />
-      <div className="h-10 w-full rounded-2xl bg-white/10" />
-      <div className="h-10 w-full rounded-2xl bg-white/10" />
-      <div className="h-10 w-full rounded-2xl bg-white/10" />
-    </div>
-  )
-}
-
-/* -------------------------------- Page -------------------------------- */
 
 export default function JournalPage() {
   const activeAccountId = useMT5Store((s) => s.activeAccountId)
@@ -470,9 +1125,9 @@ export default function JournalPage() {
   const gridDays = useMemo(() => monthGridDays(month), [month])
   const weeks = useMemo(() => computeWeeks(month, dayMap), [month, dayMap])
   const monthKPIs = useMemo(() => computeMonthKPIs(dayMap), [dayMap])
-  const monthAIPayload = useMemo(() => {
-  if (!activeAccountId) return null
 
+  const monthAIPayload = useMemo(() => {
+    if (!activeAccountId) return null
     return {
       month: `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`,
       stats: {
@@ -481,16 +1136,20 @@ export default function JournalPage() {
         avgPnL: monthKPIs.avg,
         trades: monthKPIs.trades.length,
         wins: monthKPIs.wins,
-        losses: monthKPIs.losses
+        losses: monthKPIs.losses,
       },
       dailyPnL: Object.values(dayMap).map((d: DayStats) => ({
         date: d.date.toISOString().slice(0, 10),
         pnl: sumPnL(d.trades),
-        trades: d.trades.length
-      }))
+        trades: d.trades.length,
+      })),
     }
   }, [month, monthKPIs, dayMap, activeAccountId])
 
+  const pnlAbsMax = useMemo(() => {
+    const vals = Object.values(dayMap).map((d) => Math.abs(sumPnL(d.trades)))
+    return Math.max(1, ...vals)
+  }, [dayMap])
 
   const selectedDay = selectedDayKey ? dayMap[selectedDayKey] : null
   const dayTrades = selectedDay?.trades ?? []
@@ -507,548 +1166,340 @@ export default function JournalPage() {
   const weekWin = computeWinPct(weekTrades)
   const weekAvg = computeAvg(weekTrades)
 
-  const netAccent = monthKPIs.net > 0 ? "good" : monthKPIs.net < 0 ? "bad" : "neutral"
-  const avgAccent = monthKPIs.avg > 0 ? "good" : monthKPIs.avg < 0 ? "bad" : "neutral"
-
-  const bestWorst = useMemo(() => {
-    const entries = Object.entries(dayMap).map(([k, v]) => ({
-      key: k,
-      date: v.date,
-      pnl: sumPnL(v.trades),
-      trades: v.trades.length,
-    }))
-    if (!entries.length) return null
-    const best = entries.reduce((a, b) => (b.pnl > a.pnl ? b : a), entries[0])
-    const worst = entries.reduce((a, b) => (b.pnl < a.pnl ? b : a), entries[0])
-    return { best, worst }
-  }, [dayMap])
-
-  const pnlAbsMax = useMemo(() => {
-    const vals = Object.values(dayMap).map((d) => Math.abs(sumPnL(d.trades)))
-    return Math.max(1, ...vals)
-  }, [dayMap])
+  /* ======================================================================
+     RENDER
+     ====================================================================== */
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white">
-      {/* subtle background */}
+      {/* Subtle background */}
       <div className="pointer-events-none fixed inset-0 opacity-70">
         <div className="absolute -top-40 left-1/2 h-[420px] w-[820px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[90px]" />
         <div className="absolute top-44 left-1/3 h-[360px] w-[560px] -translate-x-1/2 rounded-full bg-violet-500/10 blur-[90px]" />
       </div>
 
-      <div className="relative mx-auto max-w-[1400px] px-4 sm:px-6 py-6 space-y-5">
-        {/* Top bar */}
-        <SoftCard className="px-4 sm:px-5 py-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 text-neutral-400">
-                <CalendarDays className="h-4 w-4" />
-                <span className="text-sm">Journal</span>
-                <span className="text-xs text-neutral-600">•</span>
-                <span className="text-sm">{formatMonthTitle(month)}</span>
-              </div>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <div className="text-xl font-semibold tracking-tight">Monthly overview</div>
-                {!activeAccountId ? (
-                  <Pill tone="bad">No account selected</Pill>
-                ) : (
-                  <Pill tone="good">Account connected</Pill>
-                )}
-                {loading ? <Pill>Syncing…</Pill> : null}
-              </div>
+      <div className="relative mx-auto max-w-auto px-4 sm:px-6 py-6 space-y-4">
+        {/* Top tiny header bar (like app header) */}
+        <SoftCard className="px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-neutral-300">
+              <CalendarDays className="h-4 w-4" />
+              <div className="text-sm font-semibold">Journal</div>
+              <span className="text-xs text-neutral-600">•</span>
+              <div className="text-sm text-neutral-400">{formatMonthTitle(month)}</div>
+              {loading ? <Pill>Syncing…</Pill> : null}
+              {!activeAccountId ? <Pill tone="bad">No account selected</Pill> : null}
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-sm",
-                  "bg-white/[0.04] text-neutral-200 shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset]",
-                  "hover:bg-white/[0.06] active:scale-[0.99]"
-                )}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Prev
-              </button>
-
-              <button
-                onClick={() => setMonth(new Date())}
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-sm",
-                  "bg-emerald-500/10 text-emerald-200 shadow-[0_0_0_1px_rgba(52,211,153,0.16)_inset]",
-                  "hover:bg-emerald-500/14 active:scale-[0.99]"
-                )}
-              >
-                Today
-              </button>
-
-              <button
-                onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-sm",
-                  "bg-white/[0.04] text-neutral-200 shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset]",
-                  "hover:bg-white/[0.06] active:scale-[0.99]"
-                )}
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
+            <button
+              onClick={() => setMonth(new Date())}
+              className={cn(
+                "rounded-xl px-3 py-2 text-sm font-medium",
+                "bg-emerald-500/10 text-emerald-300",
+                "shadow-[0_0_0_1px_rgba(52,211,153,0.18)_inset]",
+                "hover:bg-emerald-500/14 transition"
+              )}
+            >
+              Today
+            </button>
           </div>
         </SoftCard>
 
-        {/* KPI row (scrollable on mobile) */}
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard
-            icon={<Activity className="h-5 w-5 text-neutral-200" />}
-            title="Net P&L"
-            accent={netAccent}
-            value={
-              <span className={monthKPIs.net >= 0 ? "text-emerald-300" : "text-red-300"}>
-                {money(monthKPIs.net, 2)}
-              </span>
-            }
-            sub={
-              <span className={monthKPIs.net >= 0 ? "text-emerald-400" : "text-red-400"}>
-                {monthKPIs.net >= 0 ? "Equity trending up" : "Equity trending down"}
-              </span>
-            }
-            right={
-              <Pill tone={netAccent === "good" ? "good" : netAccent === "bad" ? "bad" : "neutral"}>
-                {monthKPIs.wins}W / {monthKPIs.losses}L
-              </Pill>
-            }
-          />
+<div className="hidden sm:grid grid-cols-2 xl:grid-cols-4 gap-3">
+  <TopKPI
+    icon={<Activity className="h-5 w-5 text-red-300" />}
+    title="Net P&L"
+    value={
+      <span className="text-red-300">
+        {money(monthKPIs.net, 2)}
+      </span>
+    }
+    valueTone="bad"
+    subtitle="Equity trending down"
+    pill={<Pill tone="bad">{monthKPIs.wins}W / {monthKPIs.losses}L</Pill>}
+  />
 
-          <MetricCard
-            icon={<Percent className="h-5 w-5 text-neutral-200" />}
-            title="Win rate"
-            value={<span className="text-white">{monthKPIs.winPct.toFixed(1)}%</span>}
-            sub={<span>{monthKPIs.trades.length} trades</span>}
-            right={<Pill>{Math.round(monthKPIs.winPct)}% consistency</Pill>}
-          />
+  <TopKPI
+    icon={<Percent className="h-5 w-5 text-neutral-200" />}
+    title="Win rate"
+    value={<span>{monthKPIs.winPct.toFixed(1)}%</span>}
+    subtitle={`${monthKPIs.trades.length} trades`}
+    pill={<Pill>0% consistency</Pill>}
+  />
 
-          <MetricCard
-            icon={<Target className="h-5 w-5 text-neutral-200" />}
-            title="Trades"
-            value={<span className="text-white">{monthKPIs.trades.length}</span>}
-            sub={<span className="text-neutral-400">executed this month</span>}
-            right={<Pill>Avg {Math.round(monthKPIs.trades.length / 4)} / week</Pill>}
-          />
+  <TopKPI
+    icon={<Target className="h-5 w-5 text-neutral-200" />}
+    title="Trades"
+    value={<span>{monthKPIs.trades.length}</span>}
+    subtitle="executed this month"
+    pill={<Pill>Avg {Math.round(monthKPIs.trades.length / 4)} / week</Pill>}
+  />
 
-          <MetricCard
-            icon={
-              monthKPIs.avg >= 0 ? (
-                <TrendingUp className="h-5 w-5 text-emerald-300" />
-              ) : (
-                <TrendingDown className="h-5 w-5 text-red-300" />
-              )
-            }
-            title="Avg P&L / trade"
-            accent={avgAccent}
-            value={
-              <span className={monthKPIs.avg >= 0 ? "text-emerald-300" : "text-red-300"}>
-                {money(monthKPIs.avg, 2)}
-              </span>
-            }
-            sub={<span className="text-neutral-400">expectancy snapshot</span>}
-            right={
-              <Pill tone={avgAccent === "good" ? "good" : avgAccent === "bad" ? "bad" : "neutral"}>
-                {monthKPIs.avg >= 0 ? "Positive edge" : "Negative edge"}
-              </Pill>
-            }
-          />
-        </div>
+  <TopKPI
+    icon={<TrendingDown className="h-5 w-5 text-red-300" />}
+    title="Avg P&L / trade"
+    value={
+      <span className="text-red-300">
+        {money(monthKPIs.avg, 2)}
+      </span>
+    }
+    valueTone="bad"
+    subtitle="expectancy snapshot"
+    pill={<Pill tone="bad">Negative edge</Pill>}
+  />
+</div>
+</div>
 
-        {/* Main grid */}
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_380px]">
-          {/* Calendar */}
-          <SoftCard className="p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-neutral-200">Calendar</div>
-                <div className="mt-1 text-xs text-neutral-400">
-                  Tap a day for the breakdown • border intensity reflects the day’s magnitude
-                </div>
-              </div>
+        {/* ================= MAIN LAYOUT ================= */}
+<div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
+  {/* LEFT COLUMN */}
+  <div className="space-y-4">
+    {/* ================= MOBILE KPI STRIP ================= */}
+<div className="grid grid-cols-4 gap-2 sm:hidden">
+  <MobileKPI
+    label="Net P&L"
+    tone={monthKPIs.net >= 0 ? "good" : "bad"}
+    value={money(monthKPIs.net, 0)}
+    pill={<Pill tone={monthKPIs.net >= 0 ? "good" : "bad"}>{monthKPIs.wins}W / {monthKPIs.losses}L</Pill>}
+  />
 
-              <div className="hidden sm:flex items-center gap-2">
-                <Pill tone="good">Profit</Pill>
-                <Pill tone="bad">Loss</Pill>
-                <Pill>Flat</Pill>
-              </div>
-            </div>
+  <MobileKPI
+    label="Win rate"
+    value={`${monthKPIs.winPct.toFixed(0)}%`}
+    pill={<Pill>0%</Pill>}
+  />
 
-            {/* Weekday header */}
-            <div className="mt-4 grid grid-cols-7 gap-2 text-[11px] text-neutral-400">
-              {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
-                <div key={d} className="px-2">
-                  {d}
-                </div>
-              ))}
-            </div>
+  <MobileKPI
+    label="Trades"
+    value={monthKPIs.trades.length}
+    pill={<Pill>Avg 2/w</Pill>}
+  />
 
-            <div className="mt-2 grid grid-cols-7 gap-2">
-              {gridDays.map((d) => {
-                const key = ymdKey(d)
-                const data = dayMap[key]
-                const pnl = data ? sumPnL(data.trades) : null
-                const inMonth = isSameMonth(d, month)
-                const tradesCount = data?.trades.length ?? 0
+  <MobileKPI
+    label="Avg / trade"
+    tone={monthKPIs.avg >= 0 ? "good" : "bad"}
+    value={money(monthKPIs.avg, 0)}
+    pill={<Pill tone="bad">Edge</Pill>}
+  />
+</div>
 
-                const intensity = pnl === null ? 0 : Math.min(1, Math.abs(pnl) / pnlAbsMax)
-                const ring =
-                  pnl === null
-                    ? "shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset]"
-                    : pnl > 0
-                    ? "shadow-[0_0_0_1px_rgba(52,211,153,0.18)_inset]"
-                    : pnl < 0
-                    ? "shadow-[0_0_0_1px_rgba(248,113,113,0.18)_inset]"
-                    : "shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset]"
+    <JournalCalendarSection
+      month={month}
+      setMonth={setMonth}
+      gridDays={gridDays}
+      dayMap={dayMap}
+      pnlAbsMax={pnlAbsMax}
+      onSelectDay={(key) => setSelectedDayKey(key)}
+    />
 
-                const glow =
-                  pnl === null
-                    ? ""
-                    : pnl > 0
-                    ? "bg-emerald-500/6"
-                    : pnl < 0
-                    ? "bg-red-500/6"
-                    : "bg-white/[0.03]"
+    <PnLTracker dayMap={dayMap} />
+  </div>
 
-                return (
-                  <button
-                    key={key}
-                    onClick={() => setSelectedDayKey(key)}
-                    className={cn(
-                      "group relative h-[78px] sm:h-[86px] rounded-3xl px-3 py-2 text-left transition",
-                      "hover:bg-white/[0.04] active:scale-[0.99]",
-                      ring,
-                      glow,
-                      inMonth ? "opacity-100" : "opacity-35"
-                    )}
-                    style={{
-                      // subtle “fill” feel based on magnitude
-                      backgroundImage:
-                        pnl === null
-                          ? undefined
-                          : pnl >= 0
-                          ? `radial-gradient(circle at 20% 15%, rgba(16,185,129,${0.10 + intensity * 0.18}), rgba(0,0,0,0) 55%)`
-                          : `radial-gradient(circle at 20% 15%, rgba(239,68,68,${0.10 + intensity * 0.18}), rgba(0,0,0,0) 55%)`,
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-neutral-200/90">{d.getDate()}</div>
-
-                      {tradesCount > 0 ? (
-                        <div
-                          className={cn(
-                            "h-2.5 w-2.5 rounded-full",
-                            pnl! > 0
-                              ? "bg-emerald-400/80 shadow-[0_0_10px_rgba(16,185,129,0.35)]"
-                              : pnl! < 0
-                              ? "bg-red-400/80 shadow-[0_0_10px_rgba(239,68,68,0.35)]"
-                              : "bg-white/20"
-                          )}
-                        />
-                      ) : (
-                        <div className="h-2.5 w-2.5 rounded-full bg-white/10" />
-                      )}
-                    </div>
-
-                    {pnl !== null ? (
-                      <div className="mt-2">
-                        <div
-                          className={cn(
-                            "text-sm font-semibold tracking-tight",
-                            pnl >= 0 ? "text-emerald-300" : "text-red-300"
-                          )}
-                        >
-                          {money(pnl, 0)}
-                        </div>
-                        <div className="mt-1 text-[11px] text-neutral-400">
-                          {tradesCount} {tradesCount === 1 ? "trade" : "trades"}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="mt-8 text-xs text-neutral-600">—</div>
-                    )}
-
-                    {/* hover hint */}
-                    <div className="pointer-events-none absolute inset-x-3 bottom-2 opacity-0 transition group-hover:opacity-100">
-                      <div className="h-px w-full bg-white/10" />
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* Best / worst quick chips */}
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              {bestWorst ? (
-                <>
-                  <Pill tone="good">
-                    Best: {bestWorst.best.date.toLocaleDateString()} ({money(bestWorst.best.pnl, 0)})
-                  </Pill>
-                  <Pill tone="bad">
-                    Worst: {bestWorst.worst.date.toLocaleDateString()} ({money(bestWorst.worst.pnl, 0)})
-                  </Pill>
-                </>
-              ) : (
-                <Pill>Log trades to see best / worst days</Pill>
-              )}
-            </div>
-          </SoftCard>
-
-          {/* Right rail */}
-          <div className="space-y-4">
-            <SoftCard className="p-4 sm:p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold text-neutral-200">Weekly snapshots</div>
-                  <div className="mt-1 text-xs text-neutral-400">
-                    Tap a week for the full breakdown + trades
-                  </div>
-                </div>
-                <Pill>{weeks.length} weeks</Pill>
-              </div>
-
-              <div className="mt-4 space-y-2">
-                {!activeAccountId ? (
-                  <div className="rounded-2xl bg-white/[0.03] p-4 text-sm text-neutral-400 shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset]">
-                    Select an account to see weekly performance.
-                  </div>
-                ) : loading ? (
-                  <SkeletonRow />
-                ) : (
-                  weeks.map((w) => {
-                    const positive = w.pnl >= 0
-                    const mag = Math.min(1, Math.abs(w.pnl) / Math.max(1, Math.abs(monthKPIs.net || 1)))
-                    return (
-                      <button
-                        key={w.label}
-                        onClick={() => setSelectedWeek(w)}
-                        className={cn(
-                          "w-full text-left rounded-3xl p-4 transition",
-                          "shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset] hover:bg-white/[0.04] active:scale-[0.99]",
-                          positive ? "bg-emerald-500/6" : "bg-red-500/6"
-                        )}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <div className="text-sm font-semibold text-neutral-200">{w.label}</div>
-                              <Pill tone={positive ? "good" : "bad"}>{positive ? "Profit" : "Loss"}</Pill>
-                            </div>
-                            <div className="mt-1 text-xs text-neutral-400">
-                              {formatRangeShort(w.start, w.end)}
-                            </div>
-                          </div>
-
-                          <div className={cn("text-sm font-semibold", positive ? "text-emerald-300" : "text-red-300")}>
-                            {money(w.pnl, 0)}
-                          </div>
-                        </div>
-
-                        <div className="mt-3 flex items-center justify-between text-xs text-neutral-400">
-                          <span>{w.trades} trades</span>
-                          <span className={positive ? "text-emerald-400" : "text-red-400"}>
-                            {positive ? "↗" : "↘"} {Math.round(mag * 100)}%
-                          </span>
-                        </div>
-
-                        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/10">
-                          <div
-                            className={cn("h-full", positive ? "bg-emerald-400/70" : "bg-red-400/70")}
-                            style={{ width: `${Math.max(6, Math.round(mag * 100))}%` }}
-                          />
-                        </div>
-                      </button>
-                    )
-                  })
-                )}
-              </div>
-            </SoftCard>
-
-            {/* AI Journal Insight (LIVE) */}
-            <JournalAIInsightCard
-              endpoint="/api/ai/journal/month"
-              payload={monthAIPayload}
-              disabled={!monthAIPayload || loading}
-              cacheKey={`journal:month:${activeAccountId}:${month.getFullYear()}-${month.getMonth() + 1}`}
-            />
-
-
-
+  {/* RIGHT COLUMN (WEEKLY RAIL) */}
+  <div className="space-y-4">
+    <SoftCard className="p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-sm font-semibold text-neutral-200">
+            Weekly snapshots
+          </div>
+          <div className="mt-1 text-xs text-neutral-400">
+            Tap a week for breakdown + trades
           </div>
         </div>
+        <Pill>{weeks.length} weeks</Pill>
+      </div>
 
-        {/* --------------------------- Day Modal --------------------------- */}
+      <div className="mt-4 space-y-2">
+        {!activeAccountId ? (
+          <div className="rounded-2xl bg-white/[0.03] p-4 text-sm text-neutral-400 shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset]">
+            Select an account to see weekly performance.
+          </div>
+        ) : loading ? (
+          <SkeletonRow />
+        ) : (
+          weeks.map((w) => {
+            const positive = w.pnl >= 0
+            const mag = Math.min(
+              1,
+              Math.abs(w.pnl) / Math.max(1, Math.abs(monthKPIs.net || 1))
+            )
+
+            return (
+              <button
+                key={`${w.label}-${w.start.toISOString()}`}
+                onClick={() => setSelectedWeek(w)}
+                className={cn(
+                  "w-full text-left rounded-3xl p-4 transition",
+                  "shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset]",
+                  "hover:bg-white/[0.04] active:scale-[0.99]",
+                  positive ? "bg-emerald-500/7" : "bg-red-500/7"
+                )}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm font-semibold text-neutral-200">
+                        {w.label}
+                      </div>
+                      <Pill tone={positive ? "good" : "bad"}>
+                        {positive ? "Profit" : "Loss"}
+                      </Pill>
+                    </div>
+                    <div className="mt-1 text-xs text-neutral-400">
+                      {formatRangeShort(w.start, w.end)}
+                    </div>
+                  </div>
+
+                  <div
+                    className={cn(
+                      "text-sm font-semibold",
+                      positive ? "text-emerald-300" : "text-red-300"
+                    )}
+                  >
+                    {money(w.pnl, 0)}
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between text-xs text-neutral-400">
+                  <span>{w.trades} trades</span>
+                </div>
+
+                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className={cn(
+                      "h-full",
+                      positive ? "bg-emerald-400/70" : "bg-red-400/70"
+                    )}
+                    style={{
+                      width: `${Math.max(6, Math.round(mag * 100))}%`,
+                    }}
+                  />
+                </div>
+              </button>
+            )
+          })
+        )}
+      </div>
+    </SoftCard>
+
+    <JournalAIInsightCard
+      endpoint="/api/ai/journal/month"
+      payload={monthAIPayload}
+      disabled={!monthAIPayload || loading}
+      cacheKey={`journal:month:${activeAccountId}:${month.getFullYear()}-${month.getMonth() + 1}`}
+    />
+  </div>
+</div>
+
+
+        {/* ===================== DAY MODAL ===================== */}
         {selectedDay && (
           <ModalShell
+            title={selectedDay.date.toLocaleDateString(undefined, {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+            subtitle="Daily breakdown"
             onClose={() => setSelectedDayKey(null)}
-            widthClass="max-w-[980px]"
           >
-            {/* Header */}
-            <div className="mb-6 flex items-start justify-between">
-              <div>
-                <div className="text-xs uppercase tracking-wide text-neutral-500">
-                  Daily breakdown
-                </div>
-                <div className="mt-1 text-2xl font-semibold tracking-tight text-white">
-                  {selectedDay.date.toLocaleDateString(undefined, {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </div>
-              </div>
-
-              <button
-                onClick={() => setSelectedDayKey(null)}
-                aria-label="Close"
-                className="rounded-full p-2 text-neutral-400 hover:text-white hover:bg-white/5 transition"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* KPIs */}
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              <div className="rounded-3xl bg-white/[0.03] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset]">
-                <div className="text-xs text-neutral-400">Net P&L</div>
-                <div className={cn("mt-2 text-2xl font-semibold", dayNet >= 0 ? "text-emerald-300" : "text-red-300")}>
-                  {money(dayNet, 2)}
-                </div>
-                <div className="mt-2">
-                  <Pill tone={dayNet >= 0 ? "good" : dayNet < 0 ? "bad" : "neutral"}>
-                    {dayNet >= 0 ? "Good day" : dayNet < 0 ? "Tough day" : "Flat"}
-                  </Pill>
-                </div>
-              </div>
-
-              <div className="rounded-3xl bg-white/[0.03] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset]">
-                <div className="text-xs text-neutral-400">Win rate</div>
-                <div className="mt-2 text-2xl font-semibold text-white">{dayWin.toFixed(1)}%</div>
-                <div className="mt-2">
-                  <Pill>{dayTrades.length} trades</Pill>
-                </div>
-              </div>
-
-              <div className="rounded-3xl bg-white/[0.03] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset]">
-                <div className="text-xs text-neutral-400">Avg P&L / trade</div>
-                <div className={cn("mt-2 text-2xl font-semibold", dayAvg >= 0 ? "text-emerald-300" : "text-red-300")}>
-                  {money(dayAvg, 2)}
-                </div>
-                <div className="mt-2">
-                  <Pill tone={dayAvg >= 0 ? "good" : dayAvg < 0 ? "bad" : "neutral"}>
-                    {dayAvg >= 0 ? "Positive expectancy" : "Negative expectancy"}
-                  </Pill>
-                </div>
-              </div>
+              <MiniStat
+                label="Net P&L"
+                tone={dayNet >= 0 ? "good" : dayNet < 0 ? "bad" : "neutral"}
+                value={
+                  <span className={dayNet >= 0 ? "text-emerald-300" : "text-red-300"}>
+                    {money(dayNet, 2)}
+                  </span>
+                }
+              />
+              <MiniStat label="Win rate" value={<span>{dayWin.toFixed(1)}%</span>} />
+              <MiniStat
+                label="Avg / trade"
+                tone={dayAvg >= 0 ? "good" : "bad"}
+                value={
+                  <span className={dayAvg >= 0 ? "text-emerald-300" : "text-red-300"}>
+                    {money(dayAvg, 2)}
+                  </span>
+                }
+              />
             </div>
 
-            {/* Content */}
-            <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
-              <div className="max-h-[420px] overflow-y-auto pr-1">
-                <TradesList trades={dayTrades} />
+            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
+              {/* Trades list scrollable */}
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="text-sm font-semibold text-neutral-200">Trades</div>
+                  <Pill>{dayTrades.length} total</Pill>
+                </div>
+
+                <div className="max-h-[420px] overflow-y-auto pr-1">
+                  <TradesList trades={dayTrades} />
+                </div>
               </div>
 
               <JournalAIInsightCard
                 title="Daily AI Insight"
                 endpoint="/api/ai/journal/day"
-                cacheKey={`journal:day:${selectedDay.date.toISOString().slice(0,10)}`}
+                cacheKey={`journal:day:${selectedDay.date.toISOString().slice(0, 10)}`}
                 payload={{
                   date: selectedDay.date.toISOString().slice(0, 10),
                   stats: {
                     net: dayNet,
                     winRate: dayWin,
                     avgPnL: dayAvg,
-                    trades: dayTrades.length
+                    trades: dayTrades.length,
                   },
                   trades: dayTrades.map((t) => ({
                     symbol: t.symbol,
                     side: t.side,
                     pnl: t.pnl,
-                    time: t.time
-                  }))
+                    time: t.time,
+                  })),
                 }}
               />
-
-
             </div>
           </ModalShell>
         )}
 
-
-        {/* --------------------------- Week Modal -------------------------- */}
+        {/* ===================== WEEK MODAL ===================== */}
         {selectedWeek && (
           <ModalShell
+            title={selectedWeek.label}
+            subtitle={formatRangeShort(selectedWeek.start, selectedWeek.end)}
             onClose={() => setSelectedWeek(null)}
-            widthClass="max-w-[980px]"
           >
-            {/* Header */}
-            <div className="mb-6 flex items-start justify-between">
-              <div>
-                <div className="text-xs uppercase tracking-wide text-neutral-500">
-                  Weekly breakdown
-                </div>
-                <div className="mt-1 text-2xl font-semibold tracking-tight text-white">
-                  {selectedWeek.label}
-                </div>
-                <div className="mt-1 text-sm text-neutral-400">
-                  {formatRangeShort(selectedWeek.start, selectedWeek.end)}
-                </div>
-              </div>
-
-              <button
-                onClick={() => setSelectedWeek(null)}
-                aria-label="Close"
-                className="rounded-full p-2 text-neutral-400 hover:text-white hover:bg-white/5 transition"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* KPIs */}
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              <div className="rounded-3xl bg-white/[0.03] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset]">
-                <div className="text-xs text-neutral-400">Net P&L</div>
-                <div className={cn("mt-2 text-2xl font-semibold", weekNet >= 0 ? "text-emerald-300" : "text-red-300")}>
-                  {money(weekNet, 2)}
-                </div>
-                <div className="mt-2">
-                  <Pill tone={weekNet >= 0 ? "good" : weekNet < 0 ? "bad" : "neutral"}>
-                    {weekNet >= 0 ? "Winning week" : weekNet < 0 ? "Losing week" : "Flat"}
-                  </Pill>
-                </div>
-              </div>
-
-              <div className="rounded-3xl bg-white/[0.03] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset]">
-                <div className="text-xs text-neutral-400">Win rate</div>
-                <div className="mt-2 text-2xl font-semibold text-white">{weekWin.toFixed(1)}%</div>
-                <div className="mt-2">
-                  <Pill>{weekTrades.length} trades</Pill>
-                </div>
-              </div>
-
-              <div className="rounded-3xl bg-white/[0.03] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset]">
-                <div className="text-xs text-neutral-400">Avg P&L / trade</div>
-                <div className={cn("mt-2 text-2xl font-semibold", weekAvg >= 0 ? "text-emerald-300" : "text-red-300")}>
-                  {money(weekAvg, 2)}
-                </div>
-                <div className="mt-2">
-                  <Pill tone={weekAvg >= 0 ? "good" : weekAvg < 0 ? "bad" : "neutral"}>
-                    {weekAvg >= 0 ? "Positive expectancy" : "Negative expectancy"}
-                  </Pill>
-                </div>
-              </div>
+              <MiniStat
+                label="Net P&L"
+                tone={weekNet >= 0 ? "good" : weekNet < 0 ? "bad" : "neutral"}
+                value={
+                  <span className={weekNet >= 0 ? "text-emerald-300" : "text-red-300"}>
+                    {money(weekNet, 2)}
+                  </span>
+                }
+              />
+              <MiniStat label="Win rate" value={<span>{weekWin.toFixed(1)}%</span>} />
+              <MiniStat
+                label="Avg / trade"
+                tone={weekAvg >= 0 ? "good" : "bad"}
+                value={
+                  <span className={weekAvg >= 0 ? "text-emerald-300" : "text-red-300"}>
+                    {money(weekAvg, 2)}
+                  </span>
+                }
+              />
             </div>
 
-            {/* Content */}
-            <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
+            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
               <div>
-                <div className="mb-2 text-sm font-semibold text-neutral-200">Trades this week</div>
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="text-sm font-semibold text-neutral-200">Trades this week</div>
+                  <Pill>{weekTrades.length} total</Pill>
+                </div>
+
                 <div className="max-h-[420px] overflow-y-auto pr-1">
                   <TradesList trades={weekTrades} />
                 </div>
@@ -1057,30 +1508,38 @@ export default function JournalPage() {
               <JournalAIInsightCard
                 title="Weekly AI Insight"
                 endpoint="/api/ai/journal/week"
-                cacheKey={`journal:week:${selectedWeek.start.toISOString().slice(0,10)}_${selectedWeek.end.toISOString().slice(0,10)}`}
+                cacheKey={`journal:week:${selectedWeek.start.toISOString().slice(0, 10)}_${selectedWeek.end
+                  .toISOString()
+                  .slice(0, 10)}`}
                 payload={{
-                  range: `${selectedWeek.start.toISOString().slice(0,10)} → ${selectedWeek.end.toISOString().slice(0,10)}`,
+                  range: `${selectedWeek.start.toISOString().slice(0, 10)} → ${selectedWeek.end
+                    .toISOString()
+                    .slice(0, 10)}`,
                   stats: {
                     net: weekNet,
                     winRate: weekWin,
                     avgPnL: weekAvg,
-                    trades: weekTrades.length
+                    trades: weekTrades.length,
                   },
-                  trades: weekTrades.map(t => ({
+                  trades: weekTrades.map((t) => ({
                     symbol: t.symbol,
                     side: t.side,
                     pnl: t.pnl,
-                    time: t.time
-                  }))
+                    time: t.time,
+                  })),
                 }}
               />
-
-
             </div>
           </ModalShell>
         )}
-
       </div>
-    </div>
+
   )
 }
+
+/**
+ * ============================================================
+ * END OF PART 3
+ * ============================================================
+ */
+

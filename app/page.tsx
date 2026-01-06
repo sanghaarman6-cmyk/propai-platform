@@ -231,7 +231,7 @@ type Feature = {
 const FEATURES: Feature[] = [
   {
     key: "analytics",
-    name: "Analytics (AI-Powered)",
+    name: "Analytics",
     icon: BarChart3,
     tagline:
       "See what you're missing — instantly. No fluff, no gimmicks, just the truth.",

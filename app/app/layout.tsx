@@ -14,6 +14,9 @@ import { useIsAuthed } from "@/lib/auth/useIsAuthed"
 import { useState } from "react"
 import { useIsMobile } from "@/lib/hooks/useIsMobile"
 import { Menu } from "lucide-react"
+import { useSearchParams } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
+import WelcomeModal from "@/components/WelcomeModal"
 
 export default function AppLayout({
   children,
@@ -22,6 +25,13 @@ export default function AppLayout({
 }) {
   const isMobile = useIsMobile()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const searchParams = useSearchParams()
+  const [showWelcome, setShowWelcome] = useState(false)
+
+  const supabase = createClient()
+
+  const cameFromCheckout = searchParams.get("welcome") === "1"
+  const isTrial = searchParams.get("trial") === "1"
 
   const pathname = usePathname()
   const router = useRouter()
@@ -35,8 +45,58 @@ export default function AppLayout({
     if (!isAuthed) router.replace("/")
   }, [loading, isAuthed, router])
 
+  useEffect(() => {
+    async function runWelcome() {
+      if (!hasAccess) return // only after subscription/trial is active
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) return
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("has_seen_welcome")
+        .eq("id", user.id)
+        .single()
+
+      if (
+        cameFromCheckout ||
+        (data && data.has_seen_welcome === false)
+      ) {
+        setShowWelcome(true)
+      }
+    }
+
+    runWelcome()
+  }, [hasAccess, cameFromCheckout])
+
+  
+  async function closeWelcome() {
+    setShowWelcome(false)
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    await supabase
+      .from("profiles")
+      .update({ has_seen_welcome: true })
+      .eq("id", user.id)
+  }
+
+
+
   return (
     <MobileWarningGate>
+      <WelcomeModal
+        open={showWelcome}
+        onClose={closeWelcome}
+        planLabel={isTrial ? "Free trial started" : "Subscription active"}
+      />
       <div className="flex h-screen overflow-hidden">
         <ToastHost />
 

@@ -52,7 +52,7 @@ export async function POST() {
     mode: "subscription",
     payment_method_types: ["card"],
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${siteUrl}/app/fundamentals?checkout=success`,
+    success_url: `${siteUrl}/app/fundamentals?welcome=1`,
     cancel_url: `${siteUrl}/app/fundamentals?checkout=cancel`,
 
     client_reference_id: user.id,
