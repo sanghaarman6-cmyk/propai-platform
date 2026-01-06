@@ -2,6 +2,68 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .control {
+    @apply w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-sm text-white
+      outline-none transition focus:border-blue-500/50 focus:bg-black/50;
+  }
+
+  /* Remove number arrows */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  /* Kill autofill white */
+  input:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-text-fill-color: white;
+    -webkit-box-shadow: 0 0 0px 1000px rgba(0,0,0,0.4) inset;
+  }
+
+  select option {
+    background-color: #0b0b0b;
+    color: white;
+  }
+}
+
+
+
+
 body {
   font-family: var(--font-inter);
 }
+/* Clean invisible scrollbar */
+.scroll-clean {
+  scrollbar-width: none;
+}
+
+.scroll-clean::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+/* ========================================================================== */
+/*                            GLOBAL SCROLLBAR HIDE                           */
+/* ========================================================================== */
+
+/* Chrome, Safari, Edge */
+*::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: none;
+}
+
+/* Internet Explorer / old Edge */
+* {
+  -ms-overflow-style: none;
+}
+

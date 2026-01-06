@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/admin/ingest-forexfactory?secret=${NEWS_INGEST_SECRET}",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}

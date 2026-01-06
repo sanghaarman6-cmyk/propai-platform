@@ -16,7 +16,7 @@ export default function AddAccountPage() {
           </p>
 
           <GlowButton
-            onClick={() => router.push("/onboarding/mt5-connect")}
+            onClick={() => router.push("/onboarding/connect-account")}
             className="w-full"
           >
             Connect MT5 Account

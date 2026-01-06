@@ -1,31 +1,19 @@
-export type PropFirmRules = {
+export type FirmTemplate = {
   name: string
-  profitTargetPct: number
-  dailyDrawdownPct: number
-  maxDrawdownPct: number
-  phases: ("Phase 1" | "Phase 2" | "Funded")[]
+  evaluation?: string[]
+  funded?: string[]
 }
 
-export const FIRM_TEMPLATES: PropFirmRules[] = [
+export const FIRM_TEMPLATES: FirmTemplate[] = [
   {
     name: "FTMO",
-    profitTargetPct: 10,
-    dailyDrawdownPct: 5,
-    maxDrawdownPct: 10,
-    phases: ["Phase 1", "Phase 2", "Funded"],
-  },
-  {
-    name: "Alpha Capital Group",
-    profitTargetPct: 8,
-    dailyDrawdownPct: 5,
-    maxDrawdownPct: 10,
-    phases: ["Phase 1", "Funded"],
-  },
-  {
-    name: "MyForexFunds",
-    profitTargetPct: 8,
-    dailyDrawdownPct: 5,
-    maxDrawdownPct: 12,
-    phases: ["Phase 1", "Phase 2", "Funded"],
+    evaluation: [
+      "Max daily loss 5%",
+      "Max total loss 10%",
+    ],
+    funded: [
+      "Max loss 10%",
+      "No daily loss limit",
+    ],
   },
 ]

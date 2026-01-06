@@ -30,5 +30,8 @@ export async function GET(req: Request) {
     )
   }
 
-  return NextResponse.json(data ?? [])
+  // 🔥 FIX: wrap response the way the UI expects
+  return NextResponse.json({
+    accounts: data ?? [],
+  })
 }

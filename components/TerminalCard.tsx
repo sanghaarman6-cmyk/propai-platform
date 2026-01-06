@@ -1,6 +1,6 @@
-import { ReactNode } from "react"
+import { ReactNode, memo } from "react"
 
-export default function TerminalCard({
+const TerminalCard = memo(function TerminalCard({
   title,
   children,
 }: {
@@ -17,4 +17,6 @@ export default function TerminalCard({
       {children}
     </div>
   )
-}
+})
+
+export default TerminalCard

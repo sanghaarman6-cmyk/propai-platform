@@ -90,22 +90,41 @@ export type FirmTemplate = {
 
 export type TradeDirection = "Long" | "Short"
 export type TradeOutcome = "Win" | "Loss" | "BE"
+export type SessionOutcome = "Asia" | "London" | "New York" | "Off-hours"
+import type { TradeMetrics } from "@/lib/metrics/tradeMetrics"
 
 export type Trade = {
   id: string
   tsISO: string
+
+
+  riskUsd: number
+  openTime: number
+  closeTime: number
+
+
+  metrics: TradeMetrics
   instrument: string
   direction: TradeDirection
+
   entry: number
   exit: number
-  rMultiple: number
-  durationMin: number
-  session: "Asia" | "London" | "NY" | "Off-hours"
-  setupTag: string
-  outcome: TradeOutcome
 
-  profit: number
+
+  rMultiple: number | null
+
+  session: SessionOutcome 
+  setupTag: string
+
+  outcome: TradeOutcome
+  volume: number          // ✅ LOTS
+  profit: number          // ✅ PnL
+
+  riskPct: number | null  // ✅ % risk of account
 }
+
+
+
 
 export type AiInsight = {
   id: string
@@ -167,7 +186,43 @@ export type MT5Account = {
   status: MT5AccountStatus
 
   positions?: any[]
-  history?: any[]
+
+  // optional if you still use it
+  positionsClosed?: {
+    id: number
+    symbol: string
+    direction: "Long" | "Short"
+    profit: number
+    volume: number
+    time_close: number
+  }[]
+
+  // ✅ THIS is what we’re using now
+  closedTrades?: any[]
+  ruleset?: any // or better: Ruleset
+  programKey?: string | null
+  phase?: string | null
+  accountSize?: number | null
+  platform?: string | null
+  rulesConfirmed?: boolean
+
+
 }
 
-
+export type Anomaly = {
+  id: string
+  ts: number
+  name: string
+  symbol: string
+  severity: number // 0–100
+  category:
+    | "Volatility"
+    | "Liquidity"
+    | "CorrelationBreak"
+    | "FlowSpike"
+    | "EventShock"
+    | "Positioning"
+  detection: string
+  implication: string
+  suggestedAction: string
+}

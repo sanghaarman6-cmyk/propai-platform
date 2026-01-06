@@ -1,92 +1,170 @@
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+
 import { NextResponse } from "next/server"
-import { detectPropFirm } from "@/lib/rules/detectFirm"
-import { FIRM_TEMPLATES } from "@/lib/rules/firmTemplates"
+import { createClient } from "@supabase/supabase-js"
+
 import { computeMetrics } from "@/lib/rules/computeMetrics"
-import { evaluateAccountStatus } from "@/lib/rules/evaluateStatus"
+import { ingestTrades } from "@/lib/ingest/ingestTrades"
+import { normalizeMT5Trade } from "@/lib/ingest/normalizeMT5Trade"
 
-const VPS_BASE = process.env.NEXT_PUBLIC_API_BASE_URL
-const BRIDGE_SECRET = process.env.BRIDGE_SECRET
+/* ------------------------------------------------------------------
+   ENV
+------------------------------------------------------------------ */
+const VPS_BASE = process.env.NEXT_PUBLIC_API_BASE_URL!
+const BRIDGE_SECRET = process.env.BRIDGE_SECRET!
 
-export async function GET() {
-  try {
-    if (!VPS_BASE || !BRIDGE_SECRET) {
-      return NextResponse.json(
-        { error: "MT5 bridge not configured" },
-        { status: 500 }
-      )
-    }
 
-    const headers = {
-      "x-bridge-secret": BRIDGE_SECRET,
-    }
+/* ------------------------------------------------------------------
+   SUPABASE (SERVICE ROLE ONLY)
+------------------------------------------------------------------ */
+const adminSupabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
-    const [accountRes, positionsRes, historyRes] =
-      await Promise.all([
-        fetch(`${VPS_BASE}/account`, {
-          cache: "no-store",
-          headers,
-        }),
-        fetch(`${VPS_BASE}/positions`, {
-          cache: "no-store",
-          headers,
-        }),
-        fetch(`${VPS_BASE}/history?days=30`, {
-          cache: "no-store",
-          headers,
-        }),
-      ])
+/* ------------------------------------------------------------------
+   OPTIONS (Cloudflare / preflight)
+------------------------------------------------------------------ */
+export async function OPTIONS() {
+  return NextResponse.json({}, { status: 204 })
+}
 
-    if (!accountRes.ok) {
-      throw new Error("Account fetch failed")
-    }
+/* ------------------------------------------------------------------
+   ROUTE
+------------------------------------------------------------------ */
+export async function POST(req: Request) {
+  console.log("WORKER_SECRET ENV =", process.env.MT5_WORKER_SECRET)
 
-    const rawAccount = await accountRes.json()
-    const positions = positionsRes.ok
-      ? await positionsRes.json()
-      : []
-    const history = historyRes.ok
-      ? await historyRes.json()
-      : []
+  console.log("🔥 /api/mt5/sync HIT")
 
-    const firmName = detectPropFirm(
-      rawAccount.name,
-      rawAccount.server
-    )
+  /* -----------------------------
+     BODY
+  ----------------------------- */
+  const body = await req.json().catch(() => ({} as any))
+  const accountId = body?.accountId
 
-    const firmRules = FIRM_TEMPLATES.find(
-      (f) => f.name === firmName
-    )
-
-    const metrics = firmRules
-      ? computeMetrics({
-          equity: rawAccount.equity,
-          balance: rawAccount.balance,
-          startBalance: rawAccount.balance,
-          dayHighEquity:
-            rawAccount.equity + (rawAccount.profit ?? 0),
-        })
-      : null
-
-    const status =
-      firmRules && metrics
-        ? evaluateAccountStatus(metrics, firmRules)
-        : "unknown"
-
-    return NextResponse.json({
-      account: {
-        ...rawAccount,
-        firmDetected: firmName,
-        metrics,
-        status,
-      },
-      positions,
-      history,
-    })
-  } catch (error) {
-    console.error("🔥 MT5 sync error:", error)
+  if (!accountId) {
     return NextResponse.json(
-      { error: "Failed to sync MT5 data" },
-      { status: 500 }
+      { ok: false, error: "Missing accountId" },
+      { status: 400 }
     )
   }
+
+  /* -----------------------------
+     LOAD ACCOUNT
+  ----------------------------- */
+  const { data: account } = await adminSupabase
+    .from("trading_accounts")
+    .select("login, server, password, baseline_balance")
+    .eq("id", accountId)
+    .single()
+
+  if (!account) {
+    return NextResponse.json(
+      { ok: false, error: "Account not found" },
+      { status: 404 }
+    )
+  }
+
+  /* -----------------------------
+     CONNECT MT5
+  ----------------------------- */
+  const connectRes = await fetch(`${VPS_BASE}/connect`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-bridge-secret": BRIDGE_SECRET,
+    },
+    body: JSON.stringify({
+      login: account.login,
+      server: account.server,
+      password: account.password,
+    }),
+    cache: "no-store",
+  })
+
+  if (!connectRes.ok) {
+    const err = await connectRes.text()
+    return NextResponse.json(
+      { ok: false, error: "MT5 connect failed", details: err },
+      { status: 401 }
+    )
+  }
+
+  /* -----------------------------
+     FETCH DATA
+  ----------------------------- */
+  const [accountRes, historyRes] = await Promise.all([
+    fetch(`${VPS_BASE}/account`, {
+      headers: { "x-bridge-secret": BRIDGE_SECRET },
+      cache: "no-store",
+    }),
+    fetch(`${VPS_BASE}/history/closed?days=3650`, {
+      headers: { "x-bridge-secret": BRIDGE_SECRET },
+      cache: "no-store",
+    }),
+  ])
+
+  const mt5Account = await accountRes.json()
+  const trades = historyRes.ok ? await historyRes.json() : []
+
+    /* -----------------------------
+      INIT BASELINE (ONE-TIME)
+    ----------------------------- */
+    const initialBaseline =
+      account.baseline_balance ?? mt5Account.balance
+
+    // If baseline_balance is NULL/0, set it ONCE to the first real MT5 balance
+    if (!account.baseline_balance || account.baseline_balance <= 0) {
+      await adminSupabase
+        .from("trading_accounts")
+        .update({ baseline_balance: mt5Account.balance })
+        .eq("id", accountId)
+    }
+
+  /* -----------------------------
+     INGEST TRADES
+  ----------------------------- */
+  const { data: owner } = await adminSupabase
+    .from("trading_accounts")
+    .select("user_id")
+    .eq("id", accountId)
+    .single()
+
+  if (owner?.user_id && Array.isArray(trades)) {
+    const normalized = trades
+      .filter((t: any) => t?.ticket)
+      .map((t: any) =>
+        normalizeMT5Trade(t, owner.user_id, accountId)
+      )
+
+    await ingestTrades(normalized)
+  }
+
+  /* -----------------------------
+     METRICS
+  ----------------------------- */
+  const baseline = initialBaseline
+
+
+  const metrics = computeMetrics({
+    equity: mt5Account.equity,
+    balance: mt5Account.balance,
+    baselineBalance: baseline,
+    trades,
+  })
+
+  await adminSupabase
+    .from("trading_accounts")
+    .update({
+      balance: mt5Account.balance,
+      equity: mt5Account.equity,
+      baseline_balance:
+        account.baseline_balance ?? mt5Account.balance,
+      last_synced_at: new Date().toISOString(),
+    })
+    .eq("id", accountId)
+
+  return NextResponse.json({ ok: true, metrics })
 }

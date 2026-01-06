@@ -1,0 +1,216 @@
+"use client"
+
+import { useEffect, useMemo, useState } from "react"
+import TerminalCard from "@/components/TerminalCard"
+import GlowButton from "@/components/GlowButton"
+import RuleCard from "@/components/RuleCard"
+import { useMT5Store } from "@/lib/mt5Store"
+
+type RawRule =
+  | string
+  | {
+      title?: string
+      description?: string
+      value?: string | number | null
+      source?: string | null
+      severity?: "critical" | "warning" | "info"
+      ai_advice?: string
+    }
+
+type AccountRulesRow = {
+  account_id: string
+  firm_key: string
+  phase: string
+  rules: RawRule[]
+  confidence?: number | null
+}
+
+type NormalizedRule = {
+  title: string
+  description: string
+  limit?: string | null
+  severity: "critical" | "warning" | "info"
+  ai_advice: string
+}
+
+export default function RulesPage() {
+  const accounts = useMT5Store((s) => s.accounts)
+  const activeAccountId = useMT5Store((s) => s.activeAccountId)
+
+  const [selectedAccountId, setSelectedAccountId] = useState<string | "all">(
+    activeAccountId ?? "all"
+  )
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [rulesRow, setRulesRow] = useState<AccountRulesRow | null>(null)
+
+  const selectedAccount = useMemo(() => {
+    if (selectedAccountId === "all") return null
+    return accounts.find((a) => a.id === selectedAccountId) ?? null
+  }, [accounts, selectedAccountId])
+
+  async function runAI(accountId: string) {
+    setLoading(true)
+    setError(null)
+    setRulesRow(null)
+
+    try {
+      const res = await fetch("/api/rules/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accountId }),
+      })
+
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error || "Failed to infer rules")
+
+      setRulesRow(data)
+    } catch (e: any) {
+      setError(e?.message ?? "Something went wrong")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 🔹 Normalize AI rules safely
+  const normalizedRules: NormalizedRule[] = useMemo(() => {
+    if (!rulesRow?.rules) return []
+
+    return rulesRow.rules
+      .map((r): NormalizedRule | null => {
+        if (typeof r === "string") {
+          if (r.trim().length < 4) return null
+          return {
+            title: r,
+            description: r,
+            severity: "info",
+            ai_advice: "Follow this rule strictly to stay compliant.",
+          }
+        }
+
+        if (!r?.title && !r?.description) return null
+
+        return {
+          title: r.title ?? "Trading Rule",
+          description: r.description ?? "",
+          limit:
+            r.value !== null && r.value !== undefined
+              ? String(r.value)
+              : null,
+          severity: r.severity ?? "info",
+          ai_advice:
+            r.ai_advice ??
+            "Monitor this rule carefully to avoid violations.",
+        }
+      })
+      .filter(Boolean) as NormalizedRule[]
+  }, [rulesRow])
+
+  return (
+    <div className="min-h-screen bg-bg-primary p-8">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <h1 className="text-xl font-semibold text-white">
+          Prop Firm Rules
+        </h1>
+
+        {/* Account selector */}
+        <div className="flex flex-wrap gap-3">
+          <GlowButton
+            type="button"
+            onClick={() => {
+              setSelectedAccountId("all")
+              setRulesRow(null)
+              setError(null)
+            }}
+          >
+            All Accounts
+          </GlowButton>
+
+          {accounts.map((a) => (
+            <GlowButton
+              key={a.id}
+              type="button"
+              onClick={() => {
+                setSelectedAccountId(a.id)
+                runAI(a.id)
+              }}
+            >
+              {a.name ?? a.label ?? a.login ?? "Account"}
+            </GlowButton>
+          ))}
+        </div>
+
+        <TerminalCard title="Rules">
+          {selectedAccountId === "all" && (
+            <div className="text-sm text-text-muted">
+              Select an account to view rules.
+            </div>
+          )}
+
+          {selectedAccount && (
+            <div className="space-y-4">
+              <div className="text-sm text-text-muted">
+                Selected:{" "}
+                <span className="text-white">
+                  {selectedAccount.name ??
+                    selectedAccount.login ??
+                    selectedAccount.id}
+                </span>
+              </div>
+
+              {loading && (
+                <div className="text-sm text-text-muted">
+                  Fetching rules from the internet…
+                </div>
+              )}
+
+              {error && (
+                <div className="text-sm text-red-400">{error}</div>
+              )}
+
+              {rulesRow && (
+                <>
+                  <div className="text-sm text-text-muted">
+                    Firm:{" "}
+                    <span className="text-white">
+                      {rulesRow.firm_key}
+                    </span>{" "}
+                    · Phase:{" "}
+                    <span className="text-white">
+                      {rulesRow.phase}
+                    </span>
+                  </div>
+
+                  {normalizedRules.length ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {normalizedRules.map((r, i) => (
+                        <RuleCard
+                          key={i}
+                          title={r.title}
+                          description={r.description}
+                          limit={r.limit}
+                          severity={r.severity}
+                          ai_advice={r.ai_advice}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-text-muted">
+                      No rules returned.
+                    </div>
+                  )}
+                </>
+              )}
+
+              {!loading && !rulesRow && !error && (
+                <div className="text-sm text-text-muted">
+                  Click an account to generate rules.
+                </div>
+              )}
+            </div>
+          )}
+        </TerminalCard>
+      </div>
+    </div>
+  )
+}

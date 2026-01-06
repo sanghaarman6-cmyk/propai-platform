@@ -5,7 +5,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" })
 
 export const metadata = {
-  title: "PropGuru AI",
+  title: "Edgely",
   description: "Always-on AI trading guru for prop firms",
 }
 
