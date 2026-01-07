@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Filter,
+  Gem,
   Info,
   Lock,
   Search,
@@ -110,30 +111,21 @@ type Firm = {
  * If you want “one truth table”:
  * - Keep everything inside FIRMS and never touch the UI.
  * ------------------------------------------------------------------------- */
-function FirmLogo({
-  firmId,
-  size = 44,
-}: {
-  firmId: string
-  size?: number
-}) {
+function FirmMark({ name, size = 44 }: { name: string; size?: number }) {
+  const initials = name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]!.toUpperCase())
+    .join("")
+
   return (
     <div
-      className="flex items-center justify-center rounded-2xl border border-white/10 bg-white/5"
+      className="flex items-center justify-center rounded-2xl border border-white/10 bg-black/35 text-[11px] font-extrabold tracking-widest text-white/90"
       style={{ width: size, height: size }}
+      aria-hidden
     >
-      <Image
-        src={`/prop-firms/${firmId}.svg`}
-        alt={`${firmId} logo`}
-        width={size * 0.7}
-        height={size * 0.7}
-        className="object-contain"
-        onError={(e) => {
-          // fallback if logo missing
-          const target = e.currentTarget as HTMLImageElement
-          target.style.display = "none"
-        }}
-      />
+      {initials}
     </div>
   )
 }
@@ -144,14 +136,14 @@ const FIRMS: Firm[] = [
     name: "FTMO",
     website: "https://ftmo.com/",
     shortPitch:
-      "One of the most recognized evaluations: clear drawdown rules, structured objectives, and a widely-known two-step process.",
+      "Top-tier two-step evaluation with strict equity-based risk limits, unlimited time, and highly standardized objective enforcement.",
     tags: ["2-Step", "Refundable fee", "Up to 90% split", "No time limit"],
-    brand: { accentClass: "text-emerald-400"},
+    brand: { accentClass: "text-emerald-400" },
     highlights: [
-      { label: "Core evaluation targets", value: "Challenge 10% / Verification 5%", tone: "neutral" },
-      { label: "Drawdown rules", value: "Daily 5% / Max 10% (typical “Normal” model)", tone: "warn" },
-      { label: "Time limit", value: "No time limit (indefinite)", tone: "good" },
-      { label: "Min trading days", value: "4 trading days (evaluation)", tone: "neutral" },
+      { label: "Evaluation targets", value: "10% / 5%", tone: "neutral" },
+      { label: "Drawdown rules", value: "5% daily / 10% max", tone: "warn" },
+      { label: "Time limit", value: "Unlimited", tone: "good" },
+      { label: "Min trading days", value: "4 per phase", tone: "neutral" },
     ],
     programs: [
       {
@@ -160,13 +152,11 @@ const FIRMS: Firm[] = [
         subtitle: "Classic two-step evaluation (Challenge → Verification)",
         steps: 2,
         markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto (CFD)"],
-        platforms: ["MT4/MT5 (varies by offering)", "cTrader (varies)"],
-        payoutSplit: "Up to 90% (after funded)",
+        platforms: ["MT4", "MT5", "cTrader"],
+        payoutSplit: "80%–90%",
         timeLimit: "No time limit",
-        minTradingDays: "4 trading days (each phase)",
+        minTradingDays: "4 trading days per phase",
         pricingTiers: [
-          // NOTE: FTMO pricing is often in EUR and varies; keep as baseline placeholders.
-          // Tip: replace these with your exact preferred tiers from FTMO checkout.
           { sizeLabel: "10K", price: { currency: "EUR", amount: 155 } },
           { sizeLabel: "25K", price: { currency: "EUR", amount: 250 } },
           { sizeLabel: "50K", price: { currency: "EUR", amount: 345 } },
@@ -176,38 +166,69 @@ const FIRMS: Firm[] = [
         objectives: [
           { label: "Profit Target (Phase 1)", value: "10%", tone: "neutral" },
           { label: "Profit Target (Phase 2)", value: "5%", tone: "neutral" },
-          { label: "Max Daily Loss", value: "5% (equity-based)", tone: "warn" },
-          { label: "Max Loss", value: "10% (equity-based)", tone: "bad" },
-          { label: "Minimum Trading Days", value: "4 days (per phase)", tone: "neutral" },
+          { label: "Max Daily Loss", value: "5%", tone: "warn" },
+          { label: "Max Loss", value: "10%", tone: "bad" },
+          { label: "Minimum Trading Days", value: "4 per phase", tone: "neutral" },
         ],
         rules: [
-          { label: "Time limit", value: "No time limit (indefinite)", tone: "good" },
-          { label: "Fee refund", value: "Fee is typically refunded with first reward after funded", tone: "good" },
-          { label: "Risk model", value: "Normal vs Aggressive exist (edit if you support both)", tone: "neutral" },
-          { label: "Notes", value: "Exact platform/instrument availability depends on region & current offering", tone: "neutral" },
+          { label: "Time limit", value: "Unlimited", tone: "good" },
+          { label: "Fee refund", value: "Refunded after first payout", tone: "good" },
+          { label: "Drawdown basis", value: "Equity-based enforcement", tone: "warn" },
         ],
         hiddenRules: [
           {
-            title: "ADD YOUR HIDDEN RULES (FTMO)",
+            title: "Commonly missed enforcement mechanics",
             severity: "medium",
             bullets: [
-              "Example: any execution-style restrictions you’ve learned",
-              "Example: payout nuances, news policy nuance, IP/device checks, etc.",
+              "Daily loss breaches fail instantly even if equity later recovers.",
+              "Max loss is enforced on equity at all times during evaluation.",
             ],
           },
         ],
-        sourcesInComments: [
-          // https://ftmo.com/en/how-to-pass-ftmo-challenge/
-          // https://ftmo.com/en/faq/step-1-ftmo-challenge/
-          // https://academy.ftmo.com/lesson/minimum-trading-days/
+      },
+      {
+        id: "ftmo-swing-2step",
+        name: "FTMO Challenge (Swing)",
+        subtitle: "Two-step evaluation designed to support swing/longer holding behavior",
+        steps: 2,
+        markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto (CFD)"],
+        platforms: ["MT4", "MT5", "cTrader"],
+        payoutSplit: "80%–90%",
+        timeLimit: "No time limit",
+        minTradingDays: "4 trading days per phase",
+        pricingTiers: [
+          { sizeLabel: "10K", price: { currency: "EUR", amount: 155 } },
+          { sizeLabel: "25K", price: { currency: "EUR", amount: 250 } },
+          { sizeLabel: "50K", price: { currency: "EUR", amount: 345 } },
+          { sizeLabel: "100K", price: { currency: "EUR", amount: 540 } },
+          { sizeLabel: "200K", price: { currency: "EUR", amount: 1080 } },
+        ],
+        objectives: [
+          { label: "Profit Target (Phase 1)", value: "10%", tone: "neutral" },
+          { label: "Profit Target (Phase 2)", value: "5%", tone: "neutral" },
+          { label: "Max Daily Loss", value: "5%", tone: "warn" },
+          { label: "Max Loss", value: "10%", tone: "bad" },
+          { label: "Minimum Trading Days", value: "4 per phase", tone: "neutral" },
+        ],
+        rules: [
+          { label: "Weekend holding", value: "Allowed on Swing", tone: "good" },
+          { label: "Time limit", value: "Unlimited", tone: "good" },
+          { label: "Drawdown basis", value: "Equity-based enforcement", tone: "warn" },
+        ],
+        hiddenRules: [
+          {
+            title: "Swing realities",
+            severity: "low",
+            bullets: ["Swap/financing costs can materially affect drawdown usage on longer holds."],
+          },
         ],
       },
     ],
     firmLevelHiddenRules: [
       {
-        title: "Firm-level hidden notes (template)",
+        title: "FTMO funded phase expectations",
         severity: "low",
-        bullets: ["Paste Discord/community findings here.", "Keep it short and punchy."],
+        bullets: ["Once funded, drawdown objectives remain the primary hard constraints; profit targets are not required."],
       },
     ],
   },
@@ -217,25 +238,25 @@ const FIRMS: Firm[] = [
     name: "ALPHA CAPITAL GROUP",
     website: "https://alphacapitalgroup.uk/",
     shortPitch:
-      "Popular UK-based prop evaluation with multiple program lines (Alpha Pro / Alpha One / Swing). Rules are straightforward but there are risk-management group behaviors to be aware of.",
-    tags: ["UK", "1-Step & 2-Step", "MT5/cTrader/TradeLocker (varies)", "Risk groups"],
-    brand: { accentClass: "text-sky-300"},
+      "UK-based firm with multiple program lines (Pro, One, Swing) featuring no maximum trading days and clear published risk limits.",
+    tags: ["UK", "1-Step & 2-Step", "No max days", "Multiple lines"],
+    brand: { accentClass: "text-sky-300" },
     highlights: [
-      { label: "Program variety", value: "Alpha Pro / Alpha One / Swing", tone: "good" },
-      { label: "Daily risk math", value: "Daily loss calculated from start-of-day (server day)", tone: "neutral" },
-      { label: "Risk management group", value: "Accounts may be moved / leverage reduced in certain cases", tone: "warn" },
+      { label: "No max days", value: "Unlimited assessment duration", tone: "good" },
+      { label: "Inactivity", value: "30 days", tone: "warn" },
+      { label: "Program variety", value: "Pro / One / Swing", tone: "good" },
     ],
     programs: [
       {
-        id: "acg-alpha-pro-2step",
-        name: "Alpha Pro",
-        subtitle: "2-Step evaluation (popular baseline)",
+        id: "acg-alpha-pro-8-2step",
+        name: "Alpha Pro (8%)",
+        subtitle: "2-Step evaluation with 8% target in Phase 1",
         steps: 2,
         markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto (CFD)"],
-        platforms: ["MT5", "cTrader", "TradeLocker (varies by region/offer)"],
-        payoutSplit: "Varies by plan (commonly 80%+)",
-        timeLimit: "Varies (often no hard time limit on many modern offers)",
-        minTradingDays: "Varies (often present)",
+        platforms: ["MT5", "cTrader", "TradeLocker"],
+        payoutSplit: "80%",
+        timeLimit: "No maximum trading days",
+        minTradingDays: "3 trading days per phase",
         pricingTiers: [
           { sizeLabel: "25K", price: { currency: "USD", amount: 197 } },
           { sizeLabel: "50K", price: { currency: "USD", amount: 297 } },
@@ -243,70 +264,133 @@ const FIRMS: Firm[] = [
           { sizeLabel: "200K", price: { currency: "USD", amount: 997 } },
         ],
         objectives: [
-          { label: "Typical profit targets", value: "Varies by program size/line (edit per your preferred spec)", tone: "neutral" },
-          { label: "Daily loss limit", value: "Start-of-day based (server day)", tone: "warn" },
-          { label: "Max drawdown", value: "Program-dependent (edit)", tone: "bad" },
+          { label: "Profit Target (Phase 1)", value: "8%", tone: "neutral" },
+          { label: "Profit Target (Phase 2)", value: "5%", tone: "neutral" },
+          { label: "Max Daily Drawdown", value: "4%", tone: "warn" },
+          { label: "Max Drawdown", value: "8%", tone: "bad" },
+          { label: "Minimum Trading Days", value: "3 per phase", tone: "neutral" },
         ],
         rules: [
-          { label: "Risk management group", value: "Possible leverage reduction / monitoring (case dependent)", tone: "warn" },
-          { label: "Trading day boundary", value: "Calculated from daily candle open (server time)", tone: "neutral" },
-          { label: "Notes", value: "Keep this section aligned to whichever Alpha program(s) you officially support", tone: "neutral" },
+          { label: "Assessment duration", value: "Unlimited", tone: "good" },
+          { label: "Inactivity", value: "30-day inactivity rule", tone: "warn" },
+          { label: "Leverage (headline)", value: "Up to 1:100 (asset-class dependent)", tone: "neutral" },
         ],
         hiddenRules: [
           {
-            title: "ADD YOUR HIDDEN RULES (Alpha)",
-            severity: "high",
+            title: "Model awareness",
+            severity: "medium",
             bullets: [
-              "Example: what behaviors trigger risk management group moves",
-              "Example: lot size/exposure limitations you’ve seen in practice",
-              "Example: payout review patterns",
+              "Pro 8% and Pro 10% use different daily/max drawdown limits.",
+              "No max days does not override inactivity enforcement.",
             ],
           },
         ],
-        sourcesInComments: [
-          // https://alphacapitalgroup.uk/product
-          // https://help.alphacapitalgroup.uk/en/articles/6934210-what-are-the-daily-risk-limits-and-how-do-they-work
-          // https://help.alphacapitalgroup.uk/en/articles/9691161-risk-management-group-pro
+      },
+      {
+        id: "acg-alpha-pro-10-2step",
+        name: "Alpha Pro (10%)",
+        subtitle: "2-Step evaluation with 10% target in Phase 1",
+        steps: 2,
+        markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto (CFD)"],
+        platforms: ["MT5", "cTrader", "TradeLocker"],
+        payoutSplit: "80%",
+        timeLimit: "No maximum trading days",
+        minTradingDays: "3 trading days per phase",
+        pricingTiers: [
+          { sizeLabel: "25K", price: { currency: "USD", amount: 197 } },
+          { sizeLabel: "50K", price: { currency: "USD", amount: 297 } },
+          { sizeLabel: "100K", price: { currency: "USD", amount: 497 } },
+          { sizeLabel: "200K", price: { currency: "USD", amount: 997 } },
+        ],
+        objectives: [
+          { label: "Profit Target (Phase 1)", value: "10%", tone: "neutral" },
+          { label: "Profit Target (Phase 2)", value: "5%", tone: "neutral" },
+          { label: "Max Daily Drawdown", value: "5%", tone: "warn" },
+          { label: "Max Drawdown", value: "10%", tone: "bad" },
+          { label: "Minimum Trading Days", value: "3 per phase", tone: "neutral" },
+        ],
+        rules: [
+          { label: "Assessment duration", value: "Unlimited", tone: "good" },
+          { label: "Inactivity", value: "30-day inactivity rule", tone: "warn" },
+          { label: "Leverage (headline)", value: "Up to 1:100 (asset-class dependent)", tone: "neutral" },
+        ],
+        hiddenRules: [
+          {
+            title: "DD sensitivity",
+            severity: "low",
+            bullets: ["This variant has looser targets but the daily/max drawdown constraints expand versus Pro 8%."],
+          },
         ],
       },
       {
         id: "acg-alpha-one-1step",
         name: "Alpha One",
-        subtitle: "1-Step evaluation (simplified path)",
+        subtitle: "1-Step evaluation",
         steps: 1,
         markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto (CFD)"],
-        platforms: ["MT5", "cTrader", "TradeLocker (varies)"],
-        payoutSplit: "Varies",
-        timeLimit: "Varies",
-        minTradingDays: "Varies",
+        platforms: ["MT5", "cTrader", "TradeLocker"],
+        payoutSplit: "80%",
+        timeLimit: "No maximum trading days",
+        minTradingDays: "3 trading days",
         pricingTiers: [
-          { sizeLabel: "5K", price: { currency: "USD", amount: 50 } },
           { sizeLabel: "50K", price: { currency: "USD", amount: 297 } },
           { sizeLabel: "100K", price: { currency: "USD", amount: 497 } },
         ],
         objectives: [
-          { label: "Profit target", value: "Program-dependent (edit)", tone: "neutral" },
-          { label: "Daily loss", value: "Start-of-day based (server day)", tone: "warn" },
-          { label: "Max loss", value: "Program-dependent (edit)", tone: "bad" },
+          { label: "Profit Target", value: "10%", tone: "neutral" },
+          { label: "Max Daily Drawdown", value: "5%", tone: "warn" },
+          { label: "Max Drawdown", value: "10%", tone: "bad" },
+          { label: "Minimum Trading Days", value: "3", tone: "neutral" },
         ],
         rules: [
-          { label: "Leverage", value: "Depends on account/risk group; reductions may apply", tone: "warn" },
-          { label: "Notes", value: "If you want exact numbers, set them here and hide program variants you don’t want", tone: "neutral" },
+          { label: "Assessment duration", value: "Unlimited", tone: "good" },
+          { label: "Inactivity", value: "30-day inactivity rule", tone: "warn" },
+          { label: "Leverage (headline)", value: "Asset-class dependent", tone: "neutral" },
         ],
         hiddenRules: [
           {
-            title: "ADD YOUR HIDDEN RULES (Alpha One)",
+            title: "Leverage differs by asset",
             severity: "medium",
-            bullets: ["Paste your community findings here."],
+            bullets: ["FX leverage is higher than indices/crypto; risk engines should be instrument-aware if you model margin impact."],
+          },
+        ],
+      },
+      {
+        id: "acg-alpha-swing-2step",
+        name: "Alpha Swing",
+        subtitle: "2-Step evaluation designed for longer-term/swing strategies",
+        steps: 2,
+        markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto (CFD)"],
+        platforms: ["MT5", "cTrader", "TradeLocker"],
+        payoutSplit: "80%",
+        timeLimit: "No maximum trading days",
+        minTradingDays: "3 trading days per phase",
+        pricingTiers: [{ sizeLabel: "100K", price: { currency: "USD", amount: 577 } }],
+        objectives: [
+          { label: "Profit Target (Phase 1)", value: "10%", tone: "neutral" },
+          { label: "Profit Target (Phase 2)", value: "5%", tone: "neutral" },
+          { label: "Max Daily Drawdown", value: "5%", tone: "warn" },
+          { label: "Max Drawdown", value: "10%", tone: "bad" },
+        ],
+        rules: [
+          { label: "Assessment duration", value: "Unlimited", tone: "good" },
+          { label: "Inactivity", value: "30-day inactivity rule", tone: "warn" },
+          { label: "Designed for holds", value: "Swing-friendly constraints", tone: "good" },
+        ],
+        hiddenRules: [
+          {
+            title: "Separate ruleset",
+            severity: "low",
+            bullets: ["Treat Swing as its own ruleset in your UI and rule-checker; don’t assume Pro parity."],
           },
         ],
       },
     ],
     firmLevelHiddenRules: [
       {
-        title: "Firm-level hidden notes (template)",
+        title: "Alpha firm-level constraints",
         severity: "medium",
-        bullets: ["Example: payouts + review timing behavior", "Example: device/IP consistency pitfalls"],
+        bullets: ["No maximum trading days does not override inactivity enforcement; inactivity remains a practical hard rule."],
       },
     ],
   },
@@ -316,13 +400,13 @@ const FIRMS: Firm[] = [
     name: "FUNDEDNEXT",
     website: "https://fundednext.com/",
     shortPitch:
-      "Known for multiple models (2-Step, 1-Step, Lite/Instant variants). Generally clear limits (often 5% daily / 10% max on 2-step) and published plan tables.",
-    tags: ["Many models", "Up to 95% split (varies)", "Clear plan tables", "Promo-heavy"],
-    brand: { accentClass: "text-fuchsia-300"},
+      "Multiple CFD models (Stellar 2-Step, 1-Step, Lite) plus Instant access, published in a plan selector with clear targets and drawdowns.",
+    tags: ["Many models", "Up to 95% reward", "No time limit", "Instant option"],
+    brand: { accentClass: "text-fuchsia-300" },
     highlights: [
-      { label: "Common 2-step limits", value: "Daily 5% / Max 10% (2-step)", tone: "warn" },
-      { label: "Profit targets", value: "Commonly 8% then 5% (2-step)", tone: "neutral" },
-      { label: "First withdrawal", value: "Often ~21 days (model-dependent)", tone: "neutral" },
+      { label: "Stellar 2-Step DD", value: "5% daily / 10% overall", tone: "warn" },
+      { label: "Stellar 1-Step DD", value: "3% daily / 6% overall", tone: "warn" },
+      { label: "Time limit", value: "No time limit (Stellar)", tone: "good" },
     ],
     programs: [
       {
@@ -331,11 +415,12 @@ const FIRMS: Firm[] = [
         subtitle: "Phase 1 → Phase 2 evaluation",
         steps: 2,
         markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto (CFD)"],
-        platforms: ["MT5 (varies)", "cTrader (varies)"],
-        payoutSplit: "Up to 95% (varies by model/reward rules)",
-        timeLimit: "Published per model (often no strict time limit on modern offerings)",
-        minTradingDays: "5 days (commonly)",
+        platforms: ["MT4", "MT5", "cTrader"],
+        payoutSplit: "Up to 95%",
+        timeLimit: "No time limit",
+        minTradingDays: "5 trading days per phase",
         pricingTiers: [
+          { sizeLabel: "6K", price: { currency: "USD", amount: 59.99 } },
           { sizeLabel: "15K", price: { currency: "USD", amount: 119.99 } },
           { sizeLabel: "25K", price: { currency: "USD", amount: 199.99 } },
           { sizeLabel: "50K", price: { currency: "USD", amount: 299.99 } },
@@ -345,68 +430,138 @@ const FIRMS: Firm[] = [
         objectives: [
           { label: "Profit Target (Phase 1)", value: "8%", tone: "neutral" },
           { label: "Profit Target (Phase 2)", value: "5%", tone: "neutral" },
-          { label: "Daily Loss Limit", value: "5% (model-dependent)", tone: "warn" },
-          { label: "Max Loss Limit", value: "10% (2-step)", tone: "bad" },
-          { label: "Minimum Trading Days", value: "5 days (commonly)", tone: "neutral" },
+          { label: "Daily Loss Limit", value: "5% (balance-based)", tone: "warn" },
+          { label: "Overall Loss Limit", value: "10% (balance-based)", tone: "bad" },
+          { label: "Minimum Trading Days", value: "5 per phase", tone: "neutral" },
         ],
         rules: [
-          { label: "News trading", value: "Allowed on many models (confirm per program)", tone: "neutral" },
-          { label: "Refundable fee", value: "Typically refunded per published rules after first payout", tone: "good" },
-          { label: "Notes", value: "FundedNext has multiple variants (Lite/Instant/Express). Add them below as needed.", tone: "neutral" },
+          { label: "Time limit", value: "Unlimited", tone: "good" },
+          { label: "Reward cadence", value: "Bi-weekly", tone: "neutral" },
         ],
         hiddenRules: [
           {
-            title: "ADD YOUR HIDDEN RULES (FundedNext)",
+            title: "Common compliance pitfalls",
             severity: "medium",
-            bullets: [
-              "Example: any payout consistency/behavioral constraints you’ve seen",
-              "Example: restricted strategies/EA handling",
-            ],
+            bullets: ["Treat daily loss as a hard intraday stop; breaches fail regardless of recovery later in the day."],
           },
         ],
-        sourcesInComments: [
-          // https://fundednext.com/plan
-          // https://fundednext.com/stellar-model
-          // https://help.fundednext.com/en/articles/8019914-what-is-the-maximum-daily-loss-limit
-          // https://help.fundednext.com/en/articles/8019915-what-is-the-maximum-loss-limit
+      },
+      {
+        id: "fn-stellar-1step",
+        name: "Stellar (1-Step)",
+        subtitle: "Single-step evaluation",
+        steps: 1,
+        markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto (CFD)"],
+        platforms: ["MT4", "MT5", "cTrader"],
+        payoutSplit: "Up to 95%",
+        timeLimit: "No time limit",
+        minTradingDays: "2 trading days",
+        pricingTiers: [
+          { sizeLabel: "6K", price: { currency: "USD", amount: 59.99 } },
+          { sizeLabel: "15K", price: { currency: "USD", amount: 119.99 } },
+          { sizeLabel: "25K", price: { currency: "USD", amount: 199.99 } },
+          { sizeLabel: "50K", price: { currency: "USD", amount: 299.99 } },
+          { sizeLabel: "100K", price: { currency: "USD", amount: 549.99 } },
+          { sizeLabel: "200K", price: { currency: "USD", amount: 1099.99 } },
+        ],
+        objectives: [
+          { label: "Profit Target", value: "10%", tone: "neutral" },
+          { label: "Daily Loss Limit", value: "3% (balance-based)", tone: "warn" },
+          { label: "Overall Loss Limit", value: "6% (balance-based)", tone: "bad" },
+          { label: "Minimum Trading Days", value: "2", tone: "neutral" },
+        ],
+        rules: [
+          { label: "Time limit", value: "Unlimited", tone: "good" },
+          { label: "Reward cadence", value: "Every 5 business days", tone: "neutral" },
+        ],
+        hiddenRules: [
+          {
+            title: "1-Step risk compression",
+            severity: "medium",
+            bullets: ["Tighter daily/overall loss limits make this model significantly less forgiving than 2-Step."],
+          },
         ],
       },
       {
         id: "fn-stellar-lite",
         name: "Stellar Lite",
-        subtitle: "Lower targets / different limits (Lite model)",
+        subtitle: "2-Step evaluation with reduced limits",
         steps: 2,
         markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto (CFD)"],
-        platforms: ["MT5 (varies)"],
-        payoutSplit: "Varies",
-        timeLimit: "Varies",
-        minTradingDays: "5 days",
+        platforms: ["MT4", "MT5"],
+        payoutSplit: "Up to 95%",
+        timeLimit: "No time limit",
+        minTradingDays: "5 trading days per phase",
         pricingTiers: [
-          { sizeLabel: "10K", price: { currency: "USD", amount: 59.99 } },
-          { sizeLabel: "25K", price: { currency: "USD", amount: 139.99 } },
-          { sizeLabel: "50K", price: { currency: "USD", amount: 229.99 } },
-          { sizeLabel: "100K", price: { currency: "USD", amount: 399.99 } },
-          { sizeLabel: "200K", price: { currency: "USD", amount: 798.99 } },
+          { sizeLabel: "6K", price: { currency: "USD", amount: 59.99 } },
+          { sizeLabel: "15K", price: { currency: "USD", amount: 119.99 } },
+          { sizeLabel: "25K", price: { currency: "USD", amount: 199.99 } },
+          { sizeLabel: "50K", price: { currency: "USD", amount: 299.99 } },
+          { sizeLabel: "100K", price: { currency: "USD", amount: 549.99 } },
+          { sizeLabel: "200K", price: { currency: "USD", amount: 1099.99 } },
         ],
         objectives: [
-          { label: "Profit Target (Phase 1)", value: "8% (Lite)", tone: "neutral" },
-          { label: "Profit Target (Phase 2)", value: "4% (Lite)", tone: "neutral" },
-          { label: "Daily Loss Limit", value: "4% (Lite)", tone: "warn" },
-          { label: "Max Loss Limit", value: "8% (Lite)", tone: "bad" },
+          { label: "Profit Target (Phase 1)", value: "8%", tone: "neutral" },
+          { label: "Profit Target (Phase 2)", value: "4%", tone: "neutral" },
+          { label: "Daily Loss Limit", value: "4% (balance-based)", tone: "warn" },
+          { label: "Overall Loss Limit", value: "8% (balance-based)", tone: "bad" },
+          { label: "Minimum Trading Days", value: "5 per phase", tone: "neutral" },
         ],
         rules: [
-          { label: "First reward timing", value: "Model-dependent (often published)", tone: "neutral" },
-          { label: "Notes", value: "Edit Lite specifics if you want to support it in-app", tone: "neutral" },
+          { label: "Time limit", value: "Unlimited", tone: "good" },
+          { label: "Reward cadence", value: "Bi-weekly", tone: "neutral" },
         ],
         hiddenRules: [
-          { title: "ADD YOUR HIDDEN RULES (Lite)", severity: "low", bullets: ["Paste your notes here."] },
+          {
+            title: "Lite tradeoffs",
+            severity: "low",
+            bullets: ["Lower Phase 2 target comes with tighter overall constraints compared to 2-Step."],
+          },
         ],
-        sourcesInComments: [
-          // https://fundednext.com/stellar-model
+      },
+      {
+        id: "fn-stellar-instant",
+        name: "Stellar Instant",
+        subtitle: "Instant access model (no evaluation)",
+        steps: 0,
+        markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto (CFD)"],
+        platforms: ["MT4", "MT5"],
+        payoutSplit: "60%–80%",
+        timeLimit: "N/A",
+        minTradingDays: "None",
+        pricingTiers: [
+          { sizeLabel: "6K", price: { currency: "USD", amount: 59.99 } },
+          { sizeLabel: "15K", price: { currency: "USD", amount: 119.99 } },
+          { sizeLabel: "25K", price: { currency: "USD", amount: 199.99 } },
+          { sizeLabel: "50K", price: { currency: "USD", amount: 299.99 } },
+          { sizeLabel: "100K", price: { currency: "USD", amount: 549.99 } },
+          { sizeLabel: "200K", price: { currency: "USD", amount: 1099.99 } },
+        ],
+        objectives: [
+          { label: "Profit threshold to request reward", value: "5%", tone: "neutral" },
+          { label: "Daily loss limit", value: "None", tone: "good" },
+          { label: "Max loss limit", value: "6%", tone: "bad" },
+          { label: "Minimum trading days", value: "None", tone: "good" },
+        ],
+        rules: [
+          { label: "Instant model", value: "No evaluation; trade from day one", tone: "good" },
+        ],
+        hiddenRules: [
+          {
+            title: "Hard stop emphasis",
+            severity: "medium",
+            bullets: ["No daily limit means the max loss is the only hard stop—risk can accelerate fast."],
+          },
         ],
       },
     ],
-    firmLevelHiddenRules: [],
+    firmLevelHiddenRules: [
+      {
+        title: "FundedNext firm-level reminders",
+        severity: "low",
+        bullets: ["Keep program-specific drawdowns visible; FundedNext models differ materially across 1-Step/2-Step/Lite/Instant."],
+      },
+    ],
   },
 
   {
@@ -414,93 +569,160 @@ const FIRMS: Firm[] = [
     name: "E8",
     website: "https://e8markets.com/",
     shortPitch:
-      "Multi-market prop evaluations (Forex/Futures/Crypto) with multiple account models. Public help center covers detailed objective math (EOD dynamic drawdown, payout caps, etc.).",
-    tags: ["Multiple models", "Help center docs", "Forex/Futures/Crypto", "Configurable"],
-    brand: { accentClass: "text-violet-300"},
+      "Multi-model prop firm with strong documentation and strict intraday drawdown mechanics; different tracks vary widely (Classic, One, Track, Signature).",
+    tags: ["Multiple models", "Help center docs", "Best-day mechanics", "Inactivity enforcement"],
+    brand: { accentClass: "text-violet-300" },
     highlights: [
-      { label: "Common drawdown style", value: "Model-dependent (EOD dynamic DD on some)", tone: "warn" },
-      { label: "Help center depth", value: "Very detailed published docs for objectives & payout mechanics", tone: "good" },
+      { label: "Inactivity", value: "1 closed trade every 60 days", tone: "warn" },
+      { label: "DD style", value: "Floating loss counts on many models", tone: "warn" },
+      { label: "Model variety", value: "Classic / One / Track / Signature", tone: "good" },
     ],
     programs: [
       {
         id: "e8-classic",
         name: "E8 Classic",
-        subtitle: "2-Step style (classic model; numbers vary by preset/checkout)",
+        subtitle: "Original two-phase evaluation",
         steps: 2,
-        markets: ["Forex", "Futures (varies)", "Crypto (varies)"],
-        platforms: ["Varies by market"],
-        payoutSplit: "Varies (often 80–90%+ depending on chosen config)",
-        timeLimit: "No time limit (commonly)",
-        minTradingDays: "Model-dependent (some have none)",
+        markets: ["Forex", "Futures", "Crypto"],
+        platforms: ["Varies by market/offer"],
+        payoutSplit: "80%",
+        timeLimit: "Unlimited",
+        minTradingDays: "None",
         pricingTiers: [
-          // E8 pricing changes and is configurable; treat as baseline placeholders.
-          { sizeLabel: "10K", price: { currency: "USD", amount: 110 } },
-          { sizeLabel: "50K", price: { currency: "USD", amount: 338 } },
-          { sizeLabel: "100K", price: { currency: "USD", amount: 0, note: "Set exact from checkout" } },
-          { sizeLabel: "200K", price: { currency: "USD", amount: 0, note: "Set exact from checkout" } },
+          { sizeLabel: "50K", price: { currency: "USD", amount: 168 } },
+          { sizeLabel: "100K", price: { currency: "USD", amount: 298 } },
+          { sizeLabel: "150K", price: { currency: "USD", amount: 418 } },
         ],
         objectives: [
-          { label: "Profit target (Phase 2 example)", value: "4% (per E8 Classic doc example)", tone: "neutral" },
-          { label: "Daily drawdown", value: "4% (example)", tone: "warn" },
-          { label: "Max drawdown", value: "8% (example)", tone: "bad" },
-          { label: "Time limit", value: "Unlimited (commonly)", tone: "good" },
+          { label: "Profit Target (Phase 1)", value: "8%", tone: "neutral" },
+          { label: "Profit Target (Phase 2)", value: "4%", tone: "neutral" },
+          { label: "Daily Drawdown", value: "4% (includes floating loss)", tone: "warn" },
+          { label: "Maximum Drawdown", value: "8% (includes floating loss)", tone: "bad" },
+          { label: "Minimum Trading Days", value: "None", tone: "good" },
         ],
         rules: [
-          { label: "Customization", value: "E8 offers multiple models/configurations; keep your in-app spec consistent", tone: "neutral" },
-          { label: "Inactivity", value: "Varies by model and market", tone: "neutral" },
+          { label: "Inactivity", value: "At least 1 closed trade every 60 days", tone: "warn" },
         ],
         hiddenRules: [
           {
-            title: "ADD YOUR HIDDEN RULES (E8 Classic)",
-            severity: "medium",
-            bullets: ["Example: consistency/profit-cap nuances", "Example: payout buffer implications in practice"],
-          },
-        ],
-        sourcesInComments: [
-          // https://help.e8markets.com/en/articles/12041696-e8-classic
-        ],
-      },
-      {
-        id: "e8-signature",
-        name: "E8 Signature",
-        subtitle: "One-step style with EOD dynamic drawdown & payout mechanics",
-        steps: 1,
-        markets: ["Forex", "Futures", "Crypto (varies)"],
-        platforms: ["Varies"],
-        payoutSplit: "Typically 80%+ (varies by config)",
-        timeLimit: "Unlimited (commonly)",
-        minTradingDays: "None (commonly on evaluation)",
-        pricingTiers: [
-          { sizeLabel: "50K", price: { currency: "USD", amount: 260 } },
-          { sizeLabel: "100K", price: { currency: "USD", amount: 0, note: "Set exact from checkout" } },
-          { sizeLabel: "150K", price: { currency: "USD", amount: 0, note: "Set exact from checkout" } },
-        ],
-        objectives: [
-          { label: "Profit target", value: "6% (Signature marketing/docs)", tone: "neutral" },
-          { label: "EOD drawdown", value: "4% (Signature model)", tone: "warn" },
-          { label: "Min trading days", value: "None (evaluation)", tone: "good" },
-        ],
-        rules: [
-          { label: "Payout buffer", value: "Buffer applies before requesting payouts (model detail)", tone: "warn" },
-          { label: "Payout caps", value: "Caps vary by account size (model detail)", tone: "neutral" },
-        ],
-        hiddenRules: [
-          {
-            title: "ADD YOUR HIDDEN RULES (E8 Signature)",
+            title: "Classic ‘gotchas’",
             severity: "high",
             bullets: [
-              "Example: edge cases where EOD dynamic DD surprises traders",
-              "Example: payout buffer + cap strategy guidance",
+              "Daily drawdown includes floating loss; a spike can fail the account even if later recovered.",
+              "Unlimited time does not override inactivity enforcement.",
             ],
           },
         ],
-        sourcesInComments: [
-          // https://blog.e8markets.com/articles/the-new-era-e8-signature-account-and-crypto-markets-now-available
-          // https://help.e8markets.com/en/articles/11940573-payout-caps-and-buffers-for-e8-signature-explained
+      },
+      {
+        id: "e8-one",
+        name: "E8 One",
+        subtitle: "Single-step evaluation with best-day mechanics on trader stage",
+        steps: 1,
+        markets: ["Forex", "Futures", "Crypto"],
+        platforms: ["Varies by market/offer"],
+        payoutSplit: "80%",
+        timeLimit: "Unlimited",
+        minTradingDays: "None",
+        pricingTiers: [
+          { sizeLabel: "50K", price: { currency: "USD", amount: 198 } },
+          { sizeLabel: "100K", price: { currency: "USD", amount: 398 } },
+          { sizeLabel: "150K", price: { currency: "USD", amount: 548 } },
+        ],
+        objectives: [
+          { label: "Profit Target", value: "8%", tone: "neutral" },
+          { label: "Daily Drawdown", value: "3% (includes floating loss)", tone: "warn" },
+          { label: "Dynamic / Trailing Drawdown", value: "4% (model-defined)", tone: "warn" },
+          { label: "Minimum Trading Days", value: "None", tone: "good" },
+        ],
+        rules: [
+          { label: "Inactivity", value: "At least 1 closed trade every 60 days", tone: "warn" },
+          { label: "Best-day rule", value: "40% cap on best day (applies on trader stage)", tone: "warn" },
+        ],
+        hiddenRules: [
+          {
+            title: "E8 One high-impact pitfalls",
+            severity: "high",
+            bullets: [
+              "Best-day cap can invalidate performance if one day dominates the profit curve.",
+              "Trailing/dynamic DD means withdrawals require buffer awareness.",
+            ],
+          },
+        ],
+      },
+      {
+        id: "e8-track",
+        name: "E8 Track",
+        subtitle: "Multi-phase progression model",
+        steps: 3,
+        markets: ["Forex", "Futures", "Crypto"],
+        platforms: ["Varies by market/offer"],
+        payoutSplit: "80%",
+        timeLimit: "Unlimited",
+        minTradingDays: "None",
+        pricingTiers: [
+          { sizeLabel: "50K", price: { currency: "USD", amount: 188 } },
+          { sizeLabel: "100K", price: { currency: "USD", amount: 338 } },
+        ],
+        objectives: [
+          { label: "Profit Targets", value: "Phase-based (multi-step)", tone: "neutral" },
+          { label: "Daily Drawdown", value: "4% (includes floating loss)", tone: "warn" },
+          { label: "Maximum Drawdown", value: "8% (includes floating loss)", tone: "bad" },
+          { label: "Minimum Trading Days", value: "None", tone: "good" },
+        ],
+        rules: [
+          { label: "Inactivity", value: "At least 1 closed trade every 60 days", tone: "warn" },
+        ],
+        hiddenRules: [
+          {
+            title: "Track risk",
+            severity: "medium",
+            bullets: ["Floating drawdown mechanics make risk spikes especially punitive across longer progressions."],
+          },
+        ],
+      },
+      {
+        id: "e8-signature-forex",
+        name: "E8 Signature",
+        subtitle: "One-step style with trailing mechanics and payout buffers",
+        steps: 1,
+        markets: ["Forex", "Futures", "Crypto"],
+        platforms: ["Varies by market/offer"],
+        payoutSplit: "80%",
+        timeLimit: "Unlimited",
+        minTradingDays: "None",
+        pricingTiers: [
+          { sizeLabel: "50K", price: { currency: "USD", amount: 98 } },
+          { sizeLabel: "100K", price: { currency: "USD", amount: 178 } },
+          { sizeLabel: "200K", price: { currency: "USD", amount: 298 } },
+        ],
+        objectives: [
+          { label: "Profit Target", value: "8%", tone: "neutral" },
+          { label: "Trailing drawdown", value: "Model-defined (buffer required)", tone: "warn" },
+          { label: "Minimum Trading Days", value: "None", tone: "good" },
+        ],
+        rules: [
+          { label: "Payout buffer", value: "Buffer required to maintain trailing DD", tone: "warn" },
+        ],
+        hiddenRules: [
+          {
+            title: "Signature withdrawal trap",
+            severity: "high",
+            bullets: ["Withdrawing too aggressively can collapse the buffer and trigger trailing DD failure."],
+          },
         ],
       },
     ],
-    firmLevelHiddenRules: [],
+    firmLevelHiddenRules: [
+      {
+        title: "E8 firm-level priorities",
+        severity: "medium",
+        bullets: [
+          "Surface floating-loss drawdown definitions prominently; many traders assume closed-loss-only and get liquidated.",
+          "Inactivity is a real enforcement rule despite unlimited time.",
+        ],
+      },
+    ],
   },
 
   {
@@ -508,24 +730,58 @@ const FIRMS: Firm[] = [
     name: "QUANT TEKEL FUNDED",
     website: "https://qtfunded.quanttekel.com/",
     shortPitch:
-      "QT Funded by Quant Tekel offers evaluation programs with published objectives and tiered pricing. Use this as a clean template and lock in your preferred program variant.",
-    tags: ["QT Funded", "Up to 200K", "Multiple 2-step variants", "MT5/cTrader (varies)"],
-    brand: { accentClass: "text-amber-300"},
+      "Quant Tekel’s QT Funded offering spans instant-style evaluation and multi-step programs with tight static risk limits and tiered pricing.",
+    tags: ["QT Instant", "QT Prime", "QT Power", "Static DD"],
+    brand: { accentClass: "text-amber-300" },
     highlights: [
-      { label: "Max funding (headline)", value: "Up to $200K (program dependent)", tone: "neutral" },
-      { label: "Profit split (headline)", value: "Up to 90% (program dependent)", tone: "neutral" },
+      { label: "Risk style", value: "Static daily + max drawdown", tone: "warn" },
+      { label: "Program variety", value: "Instant + multi-step", tone: "good" },
     ],
     programs: [
       {
+        id: "qt-instant-eval",
+        name: "QT Instant Evaluation",
+        subtitle: "Single-step style evaluation with tight static limits",
+        steps: 1,
+        markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto (CFD)"],
+        platforms: ["MT5", "cTrader"],
+        payoutSplit: "80%–90%",
+        timeLimit: "Unlimited",
+        minTradingDays: "None",
+        pricingTiers: [
+          { sizeLabel: "2.5K", price: { currency: "USD", amount: 25 } },
+          { sizeLabel: "5K", price: { currency: "USD", amount: 50 } },
+          { sizeLabel: "10K", price: { currency: "USD", amount: 80 } },
+          { sizeLabel: "25K", price: { currency: "USD", amount: 180 } },
+          { sizeLabel: "50K", price: { currency: "USD", amount: 300 } },
+          { sizeLabel: "100K", price: { currency: "USD", amount: 590 } },
+          { sizeLabel: "200K", price: { currency: "USD", amount: 1100 } },
+        ],
+        objectives: [
+          { label: "Profit Target", value: "8%", tone: "neutral" },
+          { label: "Daily Drawdown", value: "3% (static)", tone: "warn" },
+          { label: "Max Drawdown", value: "6% (static)", tone: "bad" },
+          { label: "Minimum Trading Days", value: "None", tone: "good" },
+        ],
+        rules: [{ label: "Static DD", value: "Daily/max limits are fixed and strict", tone: "warn" }],
+        hiddenRules: [
+          {
+            title: "Tight limits warning",
+            severity: "medium",
+            bullets: ["Static 3%/6% limits punish volatility; position sizing must be conservative."],
+          },
+        ],
+      },
+      {
         id: "qt-prime-2step",
-        name: "QT PRIME (2-Step)",
-        subtitle: "Two-step evaluation (set exact objectives you want to show)",
+        name: "QT Prime (2-Step)",
+        subtitle: "Two-step evaluation with broader sizing tiers",
         steps: 2,
         markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto (CFD)"],
-        platforms: ["MT5 (likely)", "cTrader (likely)", "Varies"],
-        payoutSplit: "Up to 90% (varies)",
-        timeLimit: "Varies",
-        minTradingDays: "Varies",
+        platforms: ["MT5", "cTrader"],
+        payoutSplit: "80%–90%",
+        timeLimit: "Unlimited",
+        minTradingDays: "3 per phase",
         pricingTiers: [
           { sizeLabel: "5K", price: { currency: "USD", amount: 50 } },
           { sizeLabel: "10K", price: { currency: "USD", amount: 80 } },
@@ -535,22 +791,62 @@ const FIRMS: Firm[] = [
           { sizeLabel: "200K", price: { currency: "USD", amount: 1100 } },
         ],
         objectives: [
-          { label: "Profit targets", value: "Program-dependent (edit precisely from QT eval page)", tone: "neutral" },
-          { label: "Daily loss", value: "Program-dependent (edit)", tone: "warn" },
-          { label: "Max loss", value: "Program-dependent (edit)", tone: "bad" },
+          { label: "Profit Target (Phase 1)", value: "8%", tone: "neutral" },
+          { label: "Profit Target (Phase 2)", value: "5%", tone: "neutral" },
+          { label: "Daily Drawdown", value: "5% (static)", tone: "warn" },
+          { label: "Max Drawdown", value: "10% (static)", tone: "bad" },
+          { label: "Minimum Trading Days", value: "3 per phase", tone: "neutral" },
         ],
-        rules: [
-          { label: "Notes", value: "Pick ONE official QT model for your app, and hardcode the exact numbers here.", tone: "neutral" },
-        ],
+        rules: [{ label: "Assessment duration", value: "Unlimited", tone: "good" }],
         hiddenRules: [
-          { title: "ADD YOUR HIDDEN RULES (QT)", severity: "medium", bullets: ["Paste your research here."] },
+          {
+            title: "Model separation",
+            severity: "low",
+            bullets: ["Keep QT Prime distinct from QT Instant; drawdowns and targets are not interchangeable."],
+          },
         ],
-        sourcesInComments: [
-          // https://qtfunded.quanttekel.com/evaluations/
+      },
+      {
+        id: "qt-power-2step",
+        name: "QT Power (2-Step)",
+        subtitle: "Lower fee structure with similar two-step path",
+        steps: 2,
+        markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto (CFD)"],
+        platforms: ["MT5", "cTrader"],
+        payoutSplit: "80%–90%",
+        timeLimit: "Unlimited",
+        minTradingDays: "3 per phase",
+        pricingTiers: [
+          { sizeLabel: "5K", price: { currency: "USD", amount: 26 } },
+          { sizeLabel: "10K", price: { currency: "USD", amount: 52 } },
+          { sizeLabel: "25K", price: { currency: "USD", amount: 105 } },
+          { sizeLabel: "50K", price: { currency: "USD", amount: 210 } },
+          { sizeLabel: "100K", price: { currency: "USD", amount: 400 } },
+        ],
+        objectives: [
+          { label: "Profit Target (Phase 1)", value: "8%", tone: "neutral" },
+          { label: "Profit Target (Phase 2)", value: "5%", tone: "neutral" },
+          { label: "Daily Drawdown", value: "5% (static)", tone: "warn" },
+          { label: "Max Drawdown", value: "10% (static)", tone: "bad" },
+          { label: "Minimum Trading Days", value: "3 per phase", tone: "neutral" },
+        ],
+        rules: [{ label: "Assessment duration", value: "Unlimited", tone: "good" }],
+        hiddenRules: [
+          {
+            title: "Pricing vs constraints",
+            severity: "low",
+            bullets: ["Lower entry price doesn’t imply looser risk rules—limits remain strict."],
+          },
         ],
       },
     ],
-    firmLevelHiddenRules: [],
+    firmLevelHiddenRules: [
+      {
+        title: "QT firm-level reminder",
+        severity: "low",
+        bullets: ["Static drawdowns require robust UI warnings for intraday risk spikes and floating-loss exposure."],
+      },
+    ],
   },
 
   {
@@ -558,113 +854,265 @@ const FIRMS: Firm[] = [
     name: "FUNDERPRO",
     website: "https://funderpro.com/",
     shortPitch:
-      "Known for multiple challenge types (One Phase, Classic, Pro). Public docs explain drawdown mechanics and examples; pricing often includes refunds/credits after first reward.",
-    tags: ["One Phase", "Classic/Pro variants", "Drawdown examples", "Payout schedules vary"],
-    brand: { accentClass: "text-lime-300"},
+      "Multiple challenge types with fixed drawdown math and official tables by model: One Phase (1-Phase), Pro (2-Phase), Classic (2-Phase).",
+    tags: ["1-Phase", "2-Phase", "Fixed DD", "Unlimited duration"],
+    brand: { accentClass: "text-lime-300" },
     highlights: [
-      { label: "One Phase", value: "Single-step style challenge exists", tone: "good" },
-      { label: "Drawdown examples", value: "Published examples for daily/max drawdown mechanics", tone: "good" },
+      { label: "2-Phase targets", value: "10% / 8%", tone: "neutral" },
+      { label: "2-Phase DD", value: "5% daily / 10% overall", tone: "warn" },
+      { label: "1-Phase DD", value: "3% daily / 6% overall", tone: "warn" },
     ],
     programs: [
       {
-        id: "fp-one-phase",
-        name: "One Phase",
-        subtitle: "Single-step style challenge",
+        id: "fp-one-phase-1phase",
+        name: "One Phase (1-Phase)",
+        subtitle: "Single-step path with tighter risk limits and a consistency cap",
         steps: 1,
-        markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto (CFD)"],
-        platforms: ["Varies (MT5/TradeLocker/cTrader)"],
-        payoutSplit: "Often 80% (varies)",
-        timeLimit: "Unlimited (commonly)",
-        minTradingDays: "Varies",
+        markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto", "Stocks"],
+        platforms: ["Varies"],
+        payoutSplit: "80%",
+        timeLimit: "Unlimited",
+        minTradingDays: "None",
         pricingTiers: [
-          { sizeLabel: "25K", price: { currency: "USD", amount: 249 } },
-          { sizeLabel: "50K", price: { currency: "USD", amount: 349 } },
-          { sizeLabel: "100K", price: { currency: "USD", amount: 549 } },
-          { sizeLabel: "150K", price: { currency: "USD", amount: 819 } },
-          { sizeLabel: "200K", price: { currency: "USD", amount: 1099 } },
+          { sizeLabel: "5K", price: { currency: "USD", amount: 69 } },
+          { sizeLabel: "10K", price: { currency: "USD", amount: 89 } },
+          { sizeLabel: "25K", price: { currency: "USD", amount: 149 } },
+          { sizeLabel: "50K", price: { currency: "USD", amount: 259 } },
+          { sizeLabel: "100K", price: { currency: "USD", amount: 459 } },
+          { sizeLabel: "150K", price: { currency: "USD", amount: 659 } },
+          { sizeLabel: "200K", price: { currency: "USD", amount: 989 } },
         ],
         objectives: [
-          { label: "Profit target", value: "10% (commonly shown for some tiers)", tone: "neutral" },
-          { label: "Daily drawdown", value: "Program-dependent; see FunderPro rules (edit exact)", tone: "warn" },
-          { label: "Max drawdown", value: "Program-dependent; some models have tighter max DD", tone: "bad" },
+          { label: "Profit Target", value: "10%", tone: "neutral" },
+          { label: "Max Daily Drawdown", value: "3% (balance-based)", tone: "warn" },
+          { label: "Max Overall Drawdown", value: "6% (fixed)", tone: "bad" },
+          { label: "Minimum Trading Days", value: "None", tone: "good" },
         ],
         rules: [
-          { label: "Fee handling", value: "Challenge fee credited/refunded per program terms", tone: "good" },
-          { label: "Inactivity", value: "Some offers close after X days inactivity (confirm)", tone: "neutral" },
+          { label: "Consistency rule", value: "Best day ≤ 40% of total profit (challenge only)", tone: "warn" },
+          { label: "Inactivity", value: "Account terminated after 30 consecutive inactive days", tone: "warn" },
         ],
         hiddenRules: [
-          { title: "ADD YOUR HIDDEN RULES (FunderPro)", severity: "high", bullets: ["Paste your findings here."] },
+          {
+            title: "Consistency math reality",
+            severity: "medium",
+            bullets: ["Although no min days are required, the 40% best-day cap effectively forces multi-day profit distribution."],
+          },
         ],
-        sourcesInComments: [
-          // https://funderpro.com/trading-rules/
-          // https://funderpro.com/the-challenge/
+      },
+      {
+        id: "fp-pro-2phase",
+        name: "Pro (2-Phase)",
+        subtitle: "Two-step evaluation with higher leverage and fewer restrictions",
+        steps: 2,
+        markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto", "Stocks"],
+        platforms: ["Varies"],
+        payoutSplit: "80% (up to 90% with scaling)",
+        timeLimit: "Unlimited",
+        minTradingDays: "None",
+        pricingTiers: [
+          { sizeLabel: "5K", price: { currency: "USD", amount: 79 } },
+          { sizeLabel: "10K", price: { currency: "USD", amount: 99 } },
+          { sizeLabel: "25K", price: { currency: "USD", amount: 159 } },
+          { sizeLabel: "50K", price: { currency: "USD", amount: 279 } },
+          { sizeLabel: "100K", price: { currency: "USD", amount: 499 } },
+          { sizeLabel: "150K", price: { currency: "USD", amount: 699 } },
+          { sizeLabel: "200K", price: { currency: "USD", amount: 999 } },
+        ],
+        objectives: [
+          { label: "Profit Target (Phase 1)", value: "10%", tone: "neutral" },
+          { label: "Profit Target (Phase 2)", value: "8%", tone: "neutral" },
+          { label: "Max Daily Drawdown", value: "5% (balance-based)", tone: "warn" },
+          { label: "Max Overall Drawdown", value: "10% (fixed)", tone: "bad" },
+          { label: "Minimum Trading Days", value: "None", tone: "good" },
+        ],
+        rules: [
+          { label: "Daily DD reset", value: "Calculated at start-of-day (server-time based)", tone: "neutral" },
+          { label: "Inactivity", value: "Account terminated after 30 consecutive inactive days", tone: "warn" },
+        ],
+        hiddenRules: [
+          {
+            title: "Daily DD enforcement",
+            severity: "medium",
+            bullets: ["Daily drawdown breaches are final even if balance later recovers within the same server day."],
+          },
+        ],
+      },
+      {
+        id: "fp-classic-2phase",
+        name: "Classic (2-Phase)",
+        subtitle: "Two-step evaluation with a more structured rule set",
+        steps: 2,
+        markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto", "Stocks"],
+        platforms: ["Varies"],
+        payoutSplit: "80%",
+        timeLimit: "Unlimited",
+        minTradingDays: "None",
+        pricingTiers: [
+          { sizeLabel: "5K", price: { currency: "USD", amount: 75 } },
+          { sizeLabel: "10K", price: { currency: "USD", amount: 95 } },
+          { sizeLabel: "25K", price: { currency: "USD", amount: 155 } },
+          { sizeLabel: "50K", price: { currency: "USD", amount: 269 } },
+          { sizeLabel: "100K", price: { currency: "USD", amount: 489 } },
+          { sizeLabel: "150K", price: { currency: "USD", amount: 689 } },
+          { sizeLabel: "200K", price: { currency: "USD", amount: 989 } },
+        ],
+        objectives: [
+          { label: "Profit Target (Phase 1)", value: "10%", tone: "neutral" },
+          { label: "Profit Target (Phase 2)", value: "8%", tone: "neutral" },
+          { label: "Max Daily Drawdown", value: "5% (balance-based)", tone: "warn" },
+          { label: "Max Overall Drawdown", value: "10% (fixed)", tone: "bad" },
+          { label: "Minimum Trading Days", value: "None", tone: "good" },
+        ],
+        rules: [
+          { label: "Inactivity", value: "Account terminated after 30 consecutive inactive days", tone: "warn" },
+        ],
+        hiddenRules: [
+          {
+            title: "Classic vs Pro",
+            severity: "low",
+            bullets: ["Classic and Pro share core targets and DD, but traders should choose based on restriction profile and leverage."],
+          },
         ],
       },
     ],
-    firmLevelHiddenRules: [],
+    firmLevelHiddenRules: [
+      {
+        title: "FunderPro firm-level notes",
+        severity: "low",
+        bullets: ["Daily drawdown is balance-based; overall drawdown is fixed to the initial account value."],
+      },
+    ],
   },
 
   {
     id: "fundingpips",
     name: "FUNDINGPIPS",
-    website: "https://fundingpips.com/",
+    website: "https://www.fundingpips.com/",
     shortPitch:
-      "Multiple evaluation types and frequent promos. Public terms describe daily/overall limits and minimum profitable day definitions.",
-    tags: ["2-Step", "1-Step", "Promos", "Terms define min profitable day"],
-    brand: { accentClass: "text-rose-300"},
+      "Evaluation-focused firm offering multiple models (1-Step, 2-Step, 2-Step Pro) with terms-driven definitions and distinct risk profiles per model.",
+    tags: ["1-Step", "2-Step", "2-Step Pro", "Terms-driven rules"],
+    brand: { accentClass: "text-rose-300" },
     highlights: [
-      { label: "Risk limits (common)", value: "Often stated as ~5% daily / 10% overall for standard models", tone: "warn" },
-      { label: "Min profitable day definition", value: "Terms define what counts as a profitable day", tone: "neutral" },
+      { label: "2-Step targets", value: "8% / 5%", tone: "neutral" },
+      { label: "2-Step DD", value: "5% daily / 10% max", tone: "warn" },
+      { label: "Pro DD", value: "3% daily / 6% max", tone: "warn" },
     ],
     programs: [
       {
-        id: "fundingpips-2step",
-        name: "FundingPips (2-Step)",
-        subtitle: "Two-step evaluation (keep your in-app numbers consistent)",
-        steps: 2,
+        id: "fundingpips-1step",
+        name: "1-Step Evaluation",
+        subtitle: "Single-phase evaluation",
+        steps: 1,
         markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto (CFD)"],
-        platforms: ["Varies"],
-        payoutSplit: "Varies",
-        timeLimit: "Varies",
-        minTradingDays: "Often 3 days (program dependent)",
+        platforms: ["MT5"],
+        payoutSplit: "80%",
+        timeLimit: "Unlimited",
+        minTradingDays: "3",
         pricingTiers: [
-          // Baseline from public site snippets/typical tiers; adjust for promos.
           { sizeLabel: "5K", price: { currency: "USD", amount: 32 } },
-          { sizeLabel: "10K", price: { currency: "USD", amount: 60 } },
-          { sizeLabel: "25K", price: { currency: "USD", amount: 139 } },
-          { sizeLabel: "50K", price: { currency: "USD", amount: 239 } },
-          { sizeLabel: "100K", price: { currency: "USD", amount: 399 } },
+          { sizeLabel: "10K", price: { currency: "USD", amount: 49 } },
+          { sizeLabel: "25K", price: { currency: "USD", amount: 99 } },
+          { sizeLabel: "50K", price: { currency: "USD", amount: 179 } },
+          { sizeLabel: "100K", price: { currency: "USD", amount: 329 } },
+          { sizeLabel: "200K", price: { currency: "USD", amount: 599 } },
         ],
         objectives: [
-          { label: "Daily loss limit", value: "Commonly ~5% (model dependent — set exact)", tone: "warn" },
-          { label: "Overall loss limit", value: "Commonly ~10% (model dependent — set exact)", tone: "bad" },
-          { label: "Minimum trading days", value: "Often 3 days (confirm exact per program)", tone: "neutral" },
+          { label: "Profit Target", value: "10%", tone: "neutral" },
+          { label: "Maximum Daily Loss", value: "5%", tone: "warn" },
+          { label: "Maximum Loss", value: "10%", tone: "bad" },
+          { label: "Minimum Trading Days", value: "3", tone: "neutral" },
         ],
-        rules: [
-          { label: "Profitable day definition", value: "Terms define what counts (e.g., minimum % profit)", tone: "neutral" },
-          { label: "Time windows", value: "Some terms reference 30-day periods starting on first trade", tone: "neutral" },
-          { label: "Notes", value: "FundingPips has multiple program lines; keep only what you want visible.", tone: "neutral" },
-        ],
+        rules: [{ label: "Model-aware enforcement", value: "Use model-specific limits for checks", tone: "neutral" }],
         hiddenRules: [
           {
-            title: "ADD YOUR HIDDEN RULES (FundingPips)",
-            severity: "high",
-            bullets: [
-              "Example: lot size caps you’ve seen",
-              "Example: funded-stage profit cap/consistency nuances",
-              "Example: payout denials patterns (if any) from community experience",
-            ],
+            title: "Don’t cross-apply limits",
+            severity: "medium",
+            bullets: ["1-Step, 2-Step, and 2-Step Pro have different risk tolerances; your UI should prevent accidental confusion."],
           },
         ],
-        sourcesInComments: [
-          // https://fundingpips.com/en/legal/terms-and-conditions
-          // https://fundingpips.com/
+      },
+      {
+        id: "fundingpips-2step",
+        name: "2-Step Evaluation",
+        subtitle: "Two-phase evaluation",
+        steps: 2,
+        markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto (CFD)"],
+        platforms: ["MT5"],
+        payoutSplit: "80%",
+        timeLimit: "Unlimited",
+        minTradingDays: "3 per phase",
+        pricingTiers: [
+          { sizeLabel: "5K", price: { currency: "USD", amount: 36 } },
+          { sizeLabel: "10K", price: { currency: "USD", amount: 55 } },
+          { sizeLabel: "25K", price: { currency: "USD", amount: 109 } },
+          { sizeLabel: "50K", price: { currency: "USD", amount: 199 } },
+          { sizeLabel: "100K", price: { currency: "USD", amount: 369 } },
+          { sizeLabel: "200K", price: { currency: "USD", amount: 679 } },
+        ],
+        objectives: [
+          { label: "Profit Target (Phase 1)", value: "8%", tone: "neutral" },
+          { label: "Profit Target (Phase 2)", value: "5%", tone: "neutral" },
+          { label: "Maximum Daily Loss", value: "5%", tone: "warn" },
+          { label: "Maximum Loss", value: "10%", tone: "bad" },
+          { label: "Minimum Trading Days", value: "3 per phase", tone: "neutral" },
+        ],
+        rules: [{ label: "Terms-driven", value: "Minimum days and definitions are enforced per model", tone: "neutral" }],
+        hiddenRules: [
+          {
+            title: "Min-days enforcement",
+            severity: "medium",
+            bullets: ["Minimum trading days are a hard rule; passing early still requires day separation."],
+          },
+        ],
+      },
+      {
+        id: "fundingpips-2step-pro",
+        name: "2-Step Pro Evaluation",
+        subtitle: "Two-phase Pro variant with tighter drawdowns and lower targets",
+        steps: 2,
+        markets: ["Forex", "Indices", "Metals", "Commodities", "Crypto (CFD)"],
+        platforms: ["MT5"],
+        payoutSplit: "80%",
+        timeLimit: "Unlimited",
+        minTradingDays: "1 per phase",
+        pricingTiers: [
+          { sizeLabel: "5K", price: { currency: "USD", amount: 29 } },
+          { sizeLabel: "10K", price: { currency: "USD", amount: 45 } },
+          { sizeLabel: "25K", price: { currency: "USD", amount: 89 } },
+          { sizeLabel: "50K", price: { currency: "USD", amount: 169 } },
+          { sizeLabel: "100K", price: { currency: "USD", amount: 309 } },
+          { sizeLabel: "200K", price: { currency: "USD", amount: 569 } },
+        ],
+        objectives: [
+          { label: "Profit Target (Phase 1)", value: "6%", tone: "neutral" },
+          { label: "Profit Target (Phase 2)", value: "6%", tone: "neutral" },
+          { label: "Maximum Daily Loss", value: "3%", tone: "warn" },
+          { label: "Maximum Loss", value: "6%", tone: "bad" },
+          { label: "Minimum Trading Days", value: "1 per phase", tone: "neutral" },
+        ],
+        rules: [{ label: "Risk compression", value: "Lower targets, much tighter drawdowns", tone: "warn" }],
+        hiddenRules: [
+          {
+            title: "Pro variant danger",
+            severity: "high",
+            bullets: ["With 3%/6% limits, even small volatility spikes can breach the account; sizing must be significantly reduced."],
+          },
         ],
       },
     ],
-    firmLevelHiddenRules: [],
+    firmLevelHiddenRules: [
+      {
+        title: "FundingPips firm-level note",
+        severity: "low",
+        bullets: ["Keep the user on the correct model—program switching without resetting expectations is a common failure mode."],
+      },
+    ],
   },
 ]
+
+
+
 
 /* --------------------------------- UI Bits -------------------------------- */
 
@@ -800,12 +1248,7 @@ export default function PropFirmsPage() {
       <div>
         <div className="flex items-center gap-2">
           <div className="text-lg font-semibold text-white">Prop Firms</div>
-          <Pill tone="good">
-            <span className="inline-flex items-center gap-1">
-              <Sparkles className="h-3.5 w-3.5" />
-              editable templates
-            </span>
-          </Pill>
+
         </div>
         <div className="mt-1 text-xs text-white/55">
           Click a firm → explore programs, public rules, and your “Hidden Rules” notes.
@@ -836,11 +1279,11 @@ export default function PropFirmsPage() {
 
   return (
     <div className="min-h-screen bg-[#070A0F]">
-      {/* Background glow */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -left-40 top-[-140px] h-[520px] w-[520px] rounded-full bg-emerald-500/10 blur-3xl" />
+      {/* subtle background */}
+      <div className="pointer-events-none fixed inset-0 opacity-70">
+        <div className="absolute -top-40 left-1/2 h-[420px] w-[820px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[90px]" />
+        <div className="absolute top-44 left-1/3 h-[360px] w-[560px] -translate-x-1/2 rounded-full bg-violet-500/10 blur-[90px]" />
         <div className="absolute right-[-220px] top-[120px] h-[620px] w-[620px] rounded-full bg-fuchsia-500/10 blur-3xl" />
-        <div className="absolute left-[30%] top-[65%] h-[520px] w-[520px] rounded-full bg-sky-500/10 blur-3xl" />
       </div>
 
       <div className="relative mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
@@ -852,7 +1295,7 @@ export default function PropFirmsPage() {
             <div className="hidden md:block">
               <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
                 <SectionTitle
-                  icon={Shield}
+                  icon={Gem}
                   title="Firms"
                   subtitle="Pick a firm to see programs & rule breakdown"
                   right={<Pill>{firms.length} listed</Pill>}
@@ -876,22 +1319,25 @@ export default function PropFirmsPage() {
                             : "border-white/10 bg-black/20 hover:border-white/15 hover:bg-black/30"
                         )}
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <FirmLogo firmId={firm.id} size={44} />
+<div className="flex items-start justify-between gap-3">
+  <div className="min-w-0">
+    <div className="flex items-center gap-2">
+      <div className="text-sm font-semibold text-white">{firm.name}</div>
+      <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-white/60">
+        {firm.programs.length} programs
+      </span>
+    </div>
+    <div className="mt-1 line-clamp-2 text-xs text-white/55">{firm.shortPitch}</div>
+  </div>
 
-                            <div>
-                              <div className="text-sm font-semibold text-white">{firm.name}</div>
-                              <div className="mt-0.5 line-clamp-2 text-xs text-white/55">{firm.shortPitch}</div>
-                            </div>
-                          </div>
-                          <ChevronRight
-                            className={clsx(
-                              "mt-1 h-4 w-4 text-white/30 transition group-hover:text-white/60",
-                              active ? "text-white/70" : ""
-                            )}
-                          />
-                        </div>
+  <ChevronRight
+    className={clsx(
+      "mt-1 h-4 w-4 text-white/30 transition group-hover:text-white/60",
+      active ? "text-white/70" : ""
+    )}
+  />
+</div>
+
 
                         <div className="mt-3 flex flex-wrap gap-2">
                           {firm.tags.slice(0, 3).map((t) => (
@@ -901,26 +1347,6 @@ export default function PropFirmsPage() {
                       </button>
                     )
                   })}
-                </div>
-              </div>
-
-              <div className="mt-4 rounded-3xl border border-white/10 bg-black/20 p-4">
-                <SectionTitle
-                  icon={BookOpen}
-                  title="How to edit quickly"
-                  subtitle="Everything lives in a single object"
-                />
-                <div className="mt-3 space-y-2 text-xs text-white/55">
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-                    Edit: <span className="font-semibold text-white/80">FIRMS → firm.programs → objectives/rules</span>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-                    Add your Discord insights in:{" "}
-                    <span className="font-semibold text-white/80">hiddenRules</span>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-                    Want fewer variants? Delete programs you don’t support.
-                  </div>
                 </div>
               </div>
             </div>
@@ -940,36 +1366,28 @@ export default function PropFirmsPage() {
             ) : (
               <div className="rounded-3xl border border-white/10 bg-white/5 p-4 md:p-5">
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={clsx(
-                        "flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-black/30 text-xs font-extrabold tracking-wide text-white",
-                        activeFirm.brand.accentClass
-                      )}
-                    >
-                      <FirmLogo firmId={activeFirm.id} size={52} />
+                  <div>
+  <div className="flex flex-wrap items-center gap-2">
+    <div className="text-base font-semibold text-white">{activeFirm.name}</div>
+    <a
+      href={activeFirm.website}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-white/70 hover:bg-white/10"
+    >
+      Website <ArrowUpRight className="h-3.5 w-3.5" />
+    </a>
+  </div>
 
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-base font-semibold text-white">{activeFirm.name}</div>
-                        <a
-                          href={activeFirm.website}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-white/70 hover:bg-white/10"
-                        >
-                          Website <ArrowUpRight className="h-3.5 w-3.5" />
-                        </a>
-                      </div>
-                      <div className="mt-1 text-xs text-white/55">{activeFirm.shortPitch}</div>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {activeFirm.tags.map((t) => (
-                          <Pill key={t}>{t}</Pill>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+  <div className="mt-1 text-xs text-white/55">{activeFirm.shortPitch}</div>
+
+  <div className="mt-2 flex flex-wrap gap-2">
+    {activeFirm.tags.map((t) => (
+      <Pill key={t}>{t}</Pill>
+    ))}
+  </div>
+</div>
+
 
                   {/* Tabs */}
                   <div className="flex items-center gap-2">
@@ -1130,7 +1548,8 @@ export default function PropFirmsPage() {
                               firm.brand.accentClass
                             )}
                           >
-                            <FirmLogo firmId={firm.id} size={44} />
+                            <FirmMark name={firm.name} size={44} />
+
 
                           </div>
                           <div className="min-w-0">
@@ -1201,14 +1620,7 @@ function ProgramTab({ program }: { program: Program }) {
           ))}
         </div>
 
-        <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
-          <div className="flex items-start gap-2">
-            <BadgeInfo className="mt-0.5 h-4 w-4 text-white/50" />
-            <div className="text-xs text-white/55">
-              Want perfect accuracy? Open the firm checkout and paste exact tiers here. The UI will auto-update.
-            </div>
-          </div>
-        </div>
+        
       </div>
 
       <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
@@ -1264,15 +1676,7 @@ function RulesTab({ program }: { program: Program }) {
           <MetaRow label="Min trading days" value={program.minTradingDays ?? "—"} />
         </div>
 
-        <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
-          <div className="flex items-start gap-2">
-            <Sparkles className="mt-0.5 h-4 w-4 text-white/50" />
-            <div className="text-xs text-white/55">
-              If you later want “rule cards” to be even more structured, convert <b>rules/objectives</b> into grouped
-              sections (e.g. Drawdown, Targets, Payouts, Restrictions). The UI supports it easily.
-            </div>
-          </div>
-        </div>
+        
       </div>
     </div>
   )
@@ -1343,15 +1747,7 @@ function HiddenTab({ firm, program }: { firm: Firm; program: Program }) {
           )}
         </div>
 
-        <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
-          <div className="flex items-start gap-2">
-            <BadgeInfo className="mt-0.5 h-4 w-4 text-white/50" />
-            <div className="text-xs text-white/55">
-              Recommended structure for “hidden rules”: <b>title</b> + 3–6 bullets + severity. Keeps the UI clean and
-              scannable.
-            </div>
-          </div>
-        </div>
+        
       </div>
     </div>
   )

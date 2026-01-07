@@ -562,8 +562,8 @@ const ring =
   onClick={() => onSelectDay(key)}
   className={cn(
     "relative flex flex-col justify-between",
-    "h-[80px] sm:h-[96px]",
-    "rounded-2xl px-2 py-2",
+    "h-[64px] sm:h-[96px]",
+    "rounded-xl px-1.5 py-1 sm:px-2 sm:py-2",
     "transition active:scale-[0.97]",
     bg,
     ring,
@@ -573,7 +573,7 @@ const ring =
 
               {/* DATE */}
               <div className="flex justify-between items-center">
-                <span className="text-[11px] font-medium">
+                <span className="text-[10px] sm:text-[11px] font-medium">
                   {d.getDate()}
                 </span>
                 {trades > 0 && (
@@ -589,8 +589,8 @@ const ring =
                   className={cn(
                     // 👇 responsive font sizing instead of truncation
                     "font-semibold tabular-nums",
-                    "text-[10px] sm:text-[13px]",
-                    "leading-[1.1]",
+                    "text-[9px] sm:text-[13px]",
+                    "leading-[1.0]",
                     pnl === null
                       ? "opacity-0"
                       : pnl >= 0
@@ -604,7 +604,7 @@ const ring =
 
                 <div
                   className={cn(
-                    "text-[10px] text-neutral-400",
+                    "text-[9px] sm:text-[10px] text-neutral-400 leading-[1]",
                     trades === 0 && "opacity-0"
                   )}
                 >
