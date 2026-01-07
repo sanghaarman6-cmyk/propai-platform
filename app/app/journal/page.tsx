@@ -484,9 +484,9 @@ export function JournalCalendarSection({
   const activeDays = useMemo(() => Object.keys(dayMap).length, [dayMap])
 
   return (
-    <SoftCard className="p-4 sm:p-6">
+    <SoftCard className="p-3 sm:p-3">
       {/* ================= HEADER ================= */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
           <button
             onClick={() =>
@@ -513,14 +513,14 @@ export function JournalCalendarSection({
 
         <div className="flex items-center gap-2">
           <Pill tone={monthNet >= 0 ? "good" : "bad"}>
-            Monthly stats: {compactMoney(monthNet)}
+            Monthly Stats: {compactMoney(monthNet)}
           </Pill>
-          <Pill>{activeDays} days</Pill>
+          <Pill>{activeDays} Days</Pill>
         </div>
       </div>
 
       {/* ================= WEEKDAYS ================= */}
-      <div className="grid grid-cols-7 mb-2 text-[11px] text-neutral-400">
+      <div className="grid grid-cols-7 mb-1 text-[11px] text-neutral-400">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div key={d} className="px-1 text-center">
             {d}
@@ -529,7 +529,7 @@ export function JournalCalendarSection({
       </div>
 
       {/* ================= CALENDAR GRID ================= */}
-      <div className="grid grid-cols-7 gap-[6px] sm:gap-2">
+      <div className="grid grid-cols-7 gap-[4px] sm:gap-[6px]">
         {gridDays.map((d) => {
           const key = ymdKey(d)
           const data = dayMap[key]
@@ -540,46 +540,37 @@ export function JournalCalendarSection({
           const intensity =
             pnl === null ? 0 : Math.min(1, Math.abs(pnl) / pnlAbsMax)
 
-          const bg =
-            pnl === null
-              ? "bg-white/[0.02]"
-              : pnl >= 0
-              ? "bg-emerald-500/10"
-              : "bg-red-500/10"
+const bg =
+  pnl === null
+    ? "bg-white/[0.02]"
+    : pnl >= 0
+    ? "bg-emerald-500/10"
+    : "bg-red-500/10"
 
-          const ring =
-            pnl === null
-              ? "shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset]"
-              : pnl >= 0
-              ? "shadow-[0_0_0_1px_rgba(52,211,153,0.3)_inset]"
-              : "shadow-[0_0_0_1px_rgba(248,113,113,0.3)_inset]"
+const ring =
+  pnl === null
+    ? "border border-white/[0.06]"
+    : pnl >= 0
+    ? "border border-emerald-400/50"
+    : "border border-red-400/50"
+
+
 
           return (
-            <button
-              key={key}
-              onClick={() => onSelectDay(key)}
-              className={cn(
-                "relative rounded-2xl transition active:scale-[0.97]",
-                "flex flex-col justify-between",
-                "h-[96px] sm:h-[112px]", // 🔒 FIXED HEIGHT
-                "px-2 py-2 text-left",
-                bg,
-                ring,
-                inMonth ? "opacity-100" : "opacity-30"
-              )}
-              style={{
-                backgroundImage:
-                  pnl === null
-                    ? undefined
-                    : pnl >= 0
-                    ? `radial-gradient(circle at 20% 15%, rgba(16,185,129,${
-                        0.15 + intensity * 0.25
-                      }), rgba(0,0,0,0) 60%)`
-                    : `radial-gradient(circle at 20% 15%, rgba(239,68,68,${
-                        0.15 + intensity * 0.25
-                      }), rgba(0,0,0,0) 60%)`,
-              }}
-            >
+<button
+  key={key}
+  onClick={() => onSelectDay(key)}
+  className={cn(
+    "relative flex flex-col justify-between",
+    "h-[80px] sm:h-[96px]",
+    "rounded-2xl px-2 py-2",
+    "transition active:scale-[0.97]",
+    bg,
+    ring,
+    inMonth ? "opacity-100" : "opacity-30"
+  )}
+>
+
               {/* DATE */}
               <div className="flex justify-between items-center">
                 <span className="text-[11px] font-medium">
@@ -595,20 +586,20 @@ export function JournalCalendarSection({
               {/* PNL */}
               <div className="mt-auto">
                 <div
-  className={cn(
-    // 👇 responsive font sizing instead of truncation
-    "font-semibold tabular-nums",
-    "text-[11px] sm:text-sm",
-    "leading-[1.1]",
-    pnl === null
-      ? "opacity-0"
-      : pnl >= 0
-      ? "text-emerald-300"
-      : "text-red-300"
-  )}
->
-  {pnl !== null ? `$${compactMoney(pnl)}` : "—"}
-</div>
+                  className={cn(
+                    // 👇 responsive font sizing instead of truncation
+                    "font-semibold tabular-nums",
+                    "text-[10px] sm:text-[13px]",
+                    "leading-[1.1]",
+                    pnl === null
+                      ? "opacity-0"
+                      : pnl >= 0
+                      ? "text-emerald-300"
+                      : "text-red-300"
+                  )}
+                >
+                  {pnl !== null ? `$${compactMoney(pnl)}` : "—"}
+                </div>
 
 
                 <div
@@ -820,7 +811,7 @@ function WeeklyRail({
 }) {
   return (
     <div className="space-y-4">
-      <SoftCard className="p-4 sm:p-5">
+      <SoftCard className="p-3 sm:p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="text-sm font-semibold text-neutral-200">
@@ -913,14 +904,6 @@ function WeeklyRail({
           )}
         </div>
       </SoftCard>
-
-      {/* AI month card */}
-      <JournalAIInsightCard
-        endpoint="/api/ai/journal/month"
-        payload={null as any} // actual payload is passed from page below; this is overwritten when used
-        disabled
-        cacheKey="journal:month:placeholder"
-      />
     </div>
   )
 }
@@ -932,6 +915,12 @@ type PnLTrackerProps = {
   dayMap: Record<string, DayStats>
 }
 function PnLTracker({ dayMap }: PnLTrackerProps) {
+  const activeAccountId = useMT5Store((s) => s.activeAccountId)
+const accounts = useMT5Store((s) => s.accounts)
+
+const account = accounts.find(a => a.id === activeAccountId)
+const accountSize = account?.accountSize ?? 0
+
   const data = Object.values(dayMap)
     .map((d) => {
       const pnl = d.trades.reduce((a, t) => a + t.pnl, 0)
@@ -946,8 +935,12 @@ function PnLTracker({ dayMap }: PnLTrackerProps) {
   const loss = data.filter(d => d.pnl < 0).reduce((a, b) => a + b.pnl, 0)
   const net = profit + loss
 
-  const pct =
-    loss !== 0 ? ((profit / Math.abs(loss)) * 100).toFixed(2) : "0.00"
+ 
+  const effectiveAccountSize =
+    accountSize || account?.balance || account?.equity || 0
+
+  const performancePct =
+    effectiveAccountSize > 0 ? (net / effectiveAccountSize) * 100 : 0
 
   return (
     <div className="rounded-2xl bg-neutral-900 border border-white/5 p-4">
@@ -966,10 +959,23 @@ function PnLTracker({ dayMap }: PnLTrackerProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-600">
-          <ArrowUpRight className="h-4 w-4" />
-          {pct}%
-        </div>
+        <div
+  className={cn(
+    "flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium",
+    performancePct >= 0
+      ? "bg-emerald-500/15 text-emerald-400"
+      : "bg-red-500/15 text-red-400"
+  )}
+>
+  {performancePct >= 0 ? (
+    <ArrowUpRight className="h-4 w-4" />
+  ) : (
+    <ArrowDownRight className="h-4 w-4" />
+  )}
+
+  {performancePct.toFixed(2)}%
+</div>
+
       </div>
 
       {/* Chart */}
@@ -1082,8 +1088,18 @@ export default function JournalPage() {
   const [loading, setLoading] = useState(false)
 
   // Modals
+    const account = useMT5Store((s) =>
+    s.accounts.find(a => a.id === activeAccountId)
+  )
+  const monthKPIs = useMemo(() => computeMonthKPIs(dayMap), [dayMap])
+  
+  const accountSize = account?.accountSize ?? 0
   const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null)
   const [selectedWeek, setSelectedWeek] = useState<WeekSummary | null>(null)
+    const performancePct =
+    accountSize > 0
+      ? (monthKPIs.net / accountSize) * 100
+      : 0
 
   /* ------------------------ Load trades (DB) ------------------------ */
   useEffect(() => {
@@ -1124,8 +1140,7 @@ export default function JournalPage() {
 
   const gridDays = useMemo(() => monthGridDays(month), [month])
   const weeks = useMemo(() => computeWeeks(month, dayMap), [month, dayMap])
-  const monthKPIs = useMemo(() => computeMonthKPIs(dayMap), [dayMap])
-
+ 
   const monthAIPayload = useMemo(() => {
     if (!activeAccountId) return null
     return {
@@ -1166,29 +1181,38 @@ export default function JournalPage() {
   const weekWin = computeWinPct(weekTrades)
   const weekAvg = computeAvg(weekTrades)
 
+
+
   /* ======================================================================
      RENDER
      ====================================================================== */
 
-  return (
-    <div className="min-h-screen bg-neutral-950 text-white">
-      {/* Subtle background */}
-      <div className="pointer-events-none fixed inset-0 opacity-70">
-        <div className="absolute -top-40 left-1/2 h-[420px] w-[820px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[90px]" />
-        <div className="absolute top-44 left-1/3 h-[360px] w-[560px] -translate-x-1/2 rounded-full bg-violet-500/10 blur-[90px]" />
-      </div>
+return (
+  <div className="min-h-screen bg-neutral-950 text-white">
+    {/* Subtle background */}
+    <div className="pointer-events-none fixed inset-0 opacity-70">
+      <div className="absolute -top-40 left-1/2 h-[420px] w-[820px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[90px]" />
+      <div className="absolute top-44 left-1/3 h-[360px] w-[560px] -translate-x-1/2 rounded-full bg-violet-500/10 blur-[90px]" />
+    </div>
 
-      <div className="relative mx-auto max-w-auto px-4 sm:px-6 py-6 space-y-4">
-        {/* Top tiny header bar (like app header) */}
-        <SoftCard className="px-4 py-3">
+    {/* PAGE CONTAINER */}
+    <div className="relative mx-auto max-w-[1400px] px-4 sm:px-6 py-6">
+
+      {/* ================= MASTER GRID ================= */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
+
+        {/* ================= HEADER (FULL WIDTH) ================= */}
+        <SoftCard className="col-span-full px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-neutral-300">
               <CalendarDays className="h-4 w-4" />
               <div className="text-sm font-semibold">Journal</div>
               <span className="text-xs text-neutral-600">•</span>
-              <div className="text-sm text-neutral-400">{formatMonthTitle(month)}</div>
-              {loading ? <Pill>Syncing…</Pill> : null}
-              {!activeAccountId ? <Pill tone="bad">No account selected</Pill> : null}
+              <div className="text-sm text-neutral-400">
+                {formatMonthTitle(month)}
+              </div>
+              {loading && <Pill>Syncing…</Pill>}
+              {!activeAccountId && <Pill tone="bad">No account selected</Pill>}
             </div>
 
             <button
@@ -1205,194 +1229,88 @@ export default function JournalPage() {
           </div>
         </SoftCard>
 
-<div className="hidden sm:grid grid-cols-2 xl:grid-cols-4 gap-3">
-  <TopKPI
-    icon={<Activity className="h-5 w-5 text-red-300" />}
-    title="Net P&L"
-    value={
-      <span className="text-red-300">
-        {money(monthKPIs.net, 2)}
-      </span>
-    }
-    valueTone="bad"
-    subtitle="Equity trending down"
-    pill={<Pill tone="bad">{monthKPIs.wins}W / {monthKPIs.losses}L</Pill>}
-  />
+        {/* ================= KPI ROW (FULL WIDTH) ================= */}
+        <div className="hidden sm:grid col-span-full grid-cols-2 xl:grid-cols-4 gap-3">
+          <TopKPI
+            icon={<Activity className="h-5 w-5 text-red-300" />}
+            title="Net P&L"
+            value={<span className="text-red-300">{money(monthKPIs.net, 2)}</span>}
+            valueTone="bad"
+            subtitle="Equity trending down"
+            pill={<Pill tone="bad">{monthKPIs.wins}W / {monthKPIs.losses}L</Pill>}
+          />
 
-  <TopKPI
-    icon={<Percent className="h-5 w-5 text-neutral-200" />}
-    title="Win rate"
-    value={<span>{monthKPIs.winPct.toFixed(1)}%</span>}
-    subtitle={`${monthKPIs.trades.length} trades`}
-    pill={<Pill>0% consistency</Pill>}
-  />
+          <TopKPI
+            icon={<Percent className="h-5 w-5 text-neutral-200" />}
+            title="Win rate"
+            value={`${monthKPIs.winPct.toFixed(1)}%`}
+            subtitle={`${monthKPIs.trades.length} trades`}
+            pill={<Pill>0% Consistency</Pill>}
+          />
 
-  <TopKPI
-    icon={<Target className="h-5 w-5 text-neutral-200" />}
-    title="Trades"
-    value={<span>{monthKPIs.trades.length}</span>}
-    subtitle="executed this month"
-    pill={<Pill>Avg {Math.round(monthKPIs.trades.length / 4)} / week</Pill>}
-  />
+          <TopKPI
+            icon={<Target className="h-5 w-5 text-neutral-200" />}
+            title="Trades"
+            value={monthKPIs.trades.length}
+            subtitle="Executed this month"
+            pill={<Pill>Avg {Math.round(monthKPIs.trades.length / 4)} / Week</Pill>}
+          />
 
-  <TopKPI
-    icon={<TrendingDown className="h-5 w-5 text-red-300" />}
-    title="Avg P&L / trade"
-    value={
-      <span className="text-red-300">
-        {money(monthKPIs.avg, 2)}
-      </span>
-    }
-    valueTone="bad"
-    subtitle="expectancy snapshot"
-    pill={<Pill tone="bad">Negative edge</Pill>}
-  />
-</div>
-</div>
-
-        {/* ================= MAIN LAYOUT ================= */}
-<div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
-  {/* LEFT COLUMN */}
-  <div className="space-y-4">
-    {/* ================= MOBILE KPI STRIP ================= */}
-<div className="grid grid-cols-4 gap-2 sm:hidden">
-  <MobileKPI
-    label="Net P&L"
-    tone={monthKPIs.net >= 0 ? "good" : "bad"}
-    value={money(monthKPIs.net, 0)}
-    pill={<Pill tone={monthKPIs.net >= 0 ? "good" : "bad"}>{monthKPIs.wins}W / {monthKPIs.losses}L</Pill>}
-  />
-
-  <MobileKPI
-    label="Win rate"
-    value={`${monthKPIs.winPct.toFixed(0)}%`}
-    pill={<Pill>0%</Pill>}
-  />
-
-  <MobileKPI
-    label="Trades"
-    value={monthKPIs.trades.length}
-    pill={<Pill>Avg 2/w</Pill>}
-  />
-
-  <MobileKPI
-    label="Avg / trade"
-    tone={monthKPIs.avg >= 0 ? "good" : "bad"}
-    value={money(monthKPIs.avg, 0)}
-    pill={<Pill tone="bad">Edge</Pill>}
-  />
-</div>
-
-    <JournalCalendarSection
-      month={month}
-      setMonth={setMonth}
-      gridDays={gridDays}
-      dayMap={dayMap}
-      pnlAbsMax={pnlAbsMax}
-      onSelectDay={(key) => setSelectedDayKey(key)}
-    />
-
-    <PnLTracker dayMap={dayMap} />
-  </div>
-
-  {/* RIGHT COLUMN (WEEKLY RAIL) */}
-  <div className="space-y-4">
-    <SoftCard className="p-4 sm:p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="text-sm font-semibold text-neutral-200">
-            Weekly snapshots
-          </div>
-          <div className="mt-1 text-xs text-neutral-400">
-            Tap a week for breakdown + trades
-          </div>
+          <TopKPI
+            icon={<TrendingDown className="h-5 w-5 text-red-300" />}
+            title="Avg P&L / trade"
+            value={<span className="text-red-300">{money(monthKPIs.avg, 2)}</span>}
+            valueTone="bad"
+            subtitle="Expectancy snapshot"
+            pill={<Pill tone="bad">Negative Edge</Pill>}
+          />
         </div>
-        <Pill>{weeks.length} weeks</Pill>
-      </div>
 
-      <div className="mt-4 space-y-2">
-        {!activeAccountId ? (
-          <div className="rounded-2xl bg-white/[0.03] p-4 text-sm text-neutral-400 shadow-[0_0_0_1px_rgba(255,255,255,0.07)_inset]">
-            Select an account to see weekly performance.
+        {/* ================= LEFT COLUMN ================= */}
+        <div className="space-y-3">
+          {/* MOBILE KPI STRIP */}
+          <div className="grid grid-cols-4 gap-2 sm:hidden">
+            <MobileKPI label="Net P&L" value={money(monthKPIs.net, 0)} />
+            <MobileKPI label="Win rate" value={`${monthKPIs.winPct.toFixed(0)}%`} />
+            <MobileKPI label="Trades" value={monthKPIs.trades.length} />
+            <MobileKPI label="Avg / trade" value={money(monthKPIs.avg, 0)} />
           </div>
-        ) : loading ? (
-          <SkeletonRow />
-        ) : (
-          weeks.map((w) => {
-            const positive = w.pnl >= 0
-            const mag = Math.min(
-              1,
-              Math.abs(w.pnl) / Math.max(1, Math.abs(monthKPIs.net || 1))
-            )
 
-            return (
-              <button
-                key={`${w.label}-${w.start.toISOString()}`}
-                onClick={() => setSelectedWeek(w)}
-                className={cn(
-                  "w-full text-left rounded-3xl p-4 transition",
-                  "shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset]",
-                  "hover:bg-white/[0.04] active:scale-[0.99]",
-                  positive ? "bg-emerald-500/7" : "bg-red-500/7"
-                )}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <div className="text-sm font-semibold text-neutral-200">
-                        {w.label}
-                      </div>
-                      <Pill tone={positive ? "good" : "bad"}>
-                        {positive ? "Profit" : "Loss"}
-                      </Pill>
-                    </div>
-                    <div className="mt-1 text-xs text-neutral-400">
-                      {formatRangeShort(w.start, w.end)}
-                    </div>
-                  </div>
+          <JournalCalendarSection
+            month={month}
+            setMonth={setMonth}
+            gridDays={gridDays}
+            dayMap={dayMap}
+            pnlAbsMax={pnlAbsMax}
+            onSelectDay={setSelectedDayKey}
+          />
 
-                  <div
-                    className={cn(
-                      "text-sm font-semibold",
-                      positive ? "text-emerald-300" : "text-red-300"
-                    )}
-                  >
-                    {money(w.pnl, 0)}
-                  </div>
-                </div>
+          <PnLTracker dayMap={dayMap} />
+        </div>
 
-                <div className="mt-3 flex items-center justify-between text-xs text-neutral-400">
-                  <span>{w.trades} trades</span>
-                </div>
+        {/* ================= RIGHT COLUMN ================= */}
+        <div className="space-y-3">
+          <WeeklyRail
+            month={month}
+            weeks={weeks}
+            monthNet={monthKPIs.net}
+            loading={loading}
+            activeAccountId={activeAccountId}
+            onSelectWeek={setSelectedWeek}
+          />
 
-                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className={cn(
-                      "h-full",
-                      positive ? "bg-emerald-400/70" : "bg-red-400/70"
-                    )}
-                    style={{
-                      width: `${Math.max(6, Math.round(mag * 100))}%`,
-                    }}
-                  />
-                </div>
-              </button>
-            )
-          })
-        )}
+          <JournalAIInsightCard
+            endpoint="/api/ai/journal/month"
+            payload={monthAIPayload}
+            disabled={!monthAIPayload || loading}
+            cacheKey={`journal:month:${activeAccountId}:${month.getFullYear()}-${month.getMonth() + 1}`}
+          />
+        </div>
+
       </div>
-    </SoftCard>
+    </div>
 
-    <JournalAIInsightCard
-      endpoint="/api/ai/journal/month"
-      payload={monthAIPayload}
-      disabled={!monthAIPayload || loading}
-      cacheKey={`journal:month:${activeAccountId}:${month.getFullYear()}-${month.getMonth() + 1}`}
-    />
-  </div>
-</div>
-
-
+    {/* ===== MODALS (UNCHANGED, OUTSIDE GRID) ===== */}
         {/* ===================== DAY MODAL ===================== */}
         {selectedDay && (
           <ModalShell
