@@ -7,12 +7,17 @@ const supabase = createBrowserClient(
 )
 
 export async function saveBacktest(args: {
+  id?: string
   name: string
   notes: string | null
   snapshot: BacktestSnapshotV1
   overwrite?: boolean
-}) {
-  const { name, notes, snapshot, overwrite } = args
+}): Promise<
+  | { ok: true; mode: "UPDATED"; id: string }
+  | { ok: true; mode: "INSERTED"; id: string }
+  | { ok: false; reason: "DUPLICATE" }
+> {
+  const { id, name, notes, snapshot, overwrite } = args
 
   const {
     data: { user },
@@ -22,7 +27,29 @@ export async function saveBacktest(args: {
     throw new Error("Not authenticated")
   }
 
-  // Check duplicate
+  // ------------------------------------------------------------
+  // OVERWRITE (explicit ID — THIS IS THE KEY FIX)
+  // ------------------------------------------------------------
+  if (overwrite && id) {
+    const { error } = await supabase
+      .from("backtests")
+      .update({
+        name,
+        notes,
+        snapshot,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .eq("user_id", user.id)
+
+    if (error) throw error
+
+    return { ok: true, mode: "UPDATED", id }
+  }
+
+  // ------------------------------------------------------------
+  // DUPLICATE NAME CHECK (save-as-new only)
+  // ------------------------------------------------------------
   const { data: existing } = await supabase
     .from("backtests")
     .select("id")
@@ -30,38 +57,29 @@ export async function saveBacktest(args: {
     .eq("name", name)
     .maybeSingle()
 
-  if (existing && !overwrite) {
-    return { ok: false as const, reason: "DUPLICATE" as const }
+  if (existing) {
+    return { ok: false, reason: "DUPLICATE" }
   }
 
-  // UPDATE
-  if (existing && overwrite) {
-    const { error } = await supabase
-      .from("backtests")
-      .update({
-        snapshot,
-        notes,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", existing.id)
+  // ------------------------------------------------------------
+  // INSERT NEW
+  // ------------------------------------------------------------
+  const { data, error } = await supabase
+    .from("backtests")
+    .insert({
+      user_id: user.id,
+      name,
+      notes,
+      snapshot,
+    })
+    .select("id")
+    .single()
 
-    if (error) throw error
+  if (error || !data) throw error
 
-    return { ok: true as const, mode: "UPDATED" as const }
-  }
-
-  // INSERT
-  const { error } = await supabase.from("backtests").insert({
-    user_id: user.id,
-    name,
-    notes,
-    snapshot,
-  })
-
-  if (error) throw error
-
-  return { ok: true as const, mode: "INSERTED" as const }
+  return { ok: true, mode: "INSERTED", id: data.id }
 }
+
 
 // -----------------------------------------------------------------------------
 // Snapshot builder (USED BY BACKTESTER PAGE — REQUIRED)

@@ -20,6 +20,7 @@ import {
 /* -------------------------------------------------------------------------- */
 /*                              Persistence Utils                              */
 /* -------------------------------------------------------------------------- */
+type Tab = "margin" | "position" | "prop"
 
 function usePersistentState<T>(key: string, initial: T) {
   const [state, setState] = useState<T>(initial)
@@ -124,6 +125,80 @@ function fmtMoney(n: number) {
 /* -------------------------------------------------------------------------- */
 /*                               UI Primitives                                */
 /* -------------------------------------------------------------------------- */
+
+function InfoTooltip({ text }: { text: string }) {
+  return (
+    <span className="relative group">
+      <span
+        className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-white/20 text-[10px] text-text-muted cursor-help"
+      >
+        i
+      </span>
+
+      <span
+        className="
+          pointer-events-none absolute z-50
+          left-1/2 top-full mt-2 w-64 -translate-x-1/2
+          rounded-xl border border-white/10 bg-black/90 p-3
+          text-xs text-muted-foreground opacity-0
+          group-hover:opacity-100 transition
+        "
+      >
+        {text}
+      </span>
+    </span>
+  )
+}
+
+function OptionGroup<T extends string | number>({
+  label,
+  value,
+  options,
+  onChange,
+  disabledOptions = [],
+}: {
+  label: React.ReactNode
+  value: T
+  options: readonly T[]
+  onChange: (v: T) => void
+  disabledOptions?: readonly T[]
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {options.map((opt) => {
+          const active = opt === value
+          const disabled = disabledOptions.includes(opt)
+
+          return (
+            <button
+              key={String(opt)}
+              onClick={() => !disabled && onChange(opt)}
+              disabled={disabled}
+              className={clsx(
+                "rounded-full px-3 py-1 text-xs border transition",
+                disabled &&
+                  "opacity-40 cursor-not-allowed border-white/10 bg-black/20 text-text-muted",
+                !disabled &&
+                  (active
+                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+                    : "border-white/10 bg-black/30 text-text-muted hover:text-white hover:bg-white/5")
+              )}
+              title={disabled ? "Coming soon" : undefined}
+            >
+              {opt}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 
 
 function TogglePill({
@@ -402,7 +477,8 @@ function InlineNotice({
 /* -------------------------------------------------------------------------- */
 
 export default function CalculatorsPage() {
-  const [tab, setTab] = useState<"margin" | "position">("margin")
+  const [tab, setTab] = useState<"margin" | "position" | "prop">("margin")
+
 
   return (
     <div className="mx-auto max-w-[980px] px-6 space-y-10">
@@ -414,27 +490,38 @@ export default function CalculatorsPage() {
 
         <div className="max-w-xl">
           <Segmented
-            value={tab}
-            onChange={(v) => setTab(v as any)}
-            items={[
-              { value: "margin", label: "Margin", icon: <Gauge className="h-4 w-4" /> },
-              { value: "position", label: "Position Size", icon: <Shield className="h-4 w-4" /> },
-            ]}
-          />
+  value={tab}
+  onChange={(v) => setTab(v as any)}
+  items={[
+    { value: "margin", label: "Margin", icon: <Gauge className="h-4 w-4" /> },
+    { value: "position", label: "Position Size", icon: <Shield className="h-4 w-4" /> },
+    { value: "prop", label: "Anti-Breach", icon: <TrendingUp className="h-4 w-4" /> },
+  ]}
+/>
+
         </div>
       </header>
 
       <AnimatePresence mode="wait">
-        {tab === "margin" ? (
-          <motion.div key="margin" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <MarginPanel />
-          </motion.div>
-        ) : (
-          <motion.div key="position" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <PositionSizingPanel />
-          </motion.div>
-        )}
-      </AnimatePresence>
+  {tab === "margin" && (
+    <motion.div key="margin" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <MarginPanel />
+    </motion.div>
+  )}
+
+  {tab === "position" && (
+    <motion.div key="position" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <PositionSizingPanel />
+    </motion.div>
+  )}
+
+  {tab === "prop" && (
+    <motion.div key="prop" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <PropCalculatorPanel />
+    </motion.div>
+  )}
+</AnimatePresence>
+
     </div>
   )
 }
@@ -539,6 +626,7 @@ function MarginPanel() {
       <div className="pointer-events-none fixed inset-0 opacity-70">
         <div className="absolute -top-40 left-1/2 h-[420px] w-[820px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[90px]" />
         <div className="absolute top-44 left-1/3 h-[360px] w-[560px] -translate-x-1/2 rounded-full bg-violet-500/10 blur-[90px]" />
+        <div className="absolute right-[-220px] top-[120px] h-[620px] w-[620px] rounded-full bg-fuchsia-500/10 blur-3xl" />
       </div>
         {/* Left: Inputs */}
         <div className="space-y-5">
@@ -696,20 +784,21 @@ function PositionSizingPanel() {
 
   return (
     
+    
     <TerminalCard title="Position Size">
+      
       <div className="flex items-center justify-between mb-4">
+        
         <div />
         <ResetButton onReset={reset} />
       </div>
     <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr]
  gap-8">
-      {/* subtle background */}
-      <div className="pointer-events-none fixed inset-0 opacity-70">
-        <div className="absolute -top-40 left-1/2 h-[420px] w-[820px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[90px]" />
-        <div className="absolute top-44 left-1/3 h-[360px] w-[560px] -translate-x-1/2 rounded-full bg-violet-500/10 blur-[90px]" />
-      </div>
+
+
         {/* Left: Inputs */}
         <div className="space-y-5">
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="Asset" hint="Pip rules adapt per symbol" icon={<Calculator className="h-4 w-4" />}>
               <AssetSelector value={symbol} onChange={setSymbol} />
@@ -804,6 +893,137 @@ function PositionSizingPanel() {
             title="Quick check"
             desc="If your stop widens, lot size drops automatically (and vice versa). Keeps risk consistent."
           />
+        </div>
+      </div>
+    </TerminalCard>
+  )
+}
+function PropCalculatorPanel() {
+  const [account, setAccount] = usePersistentState("calc.prop.account", 100000)
+  const [leverage, setLeverage] = usePersistentState("calc.prop.leverage", 50)
+  const [symbol, setSymbol] = usePersistentState("calc.prop.symbol", "XAUUSD")
+  const [riskPct, setRiskPct] = usePersistentState("calc.prop.risk", 0.5)
+  const [slPips, setSlPips] = usePersistentState("calc.prop.sl", 15)
+
+  function reset() {
+    setAccount(100000)
+    setLeverage(50)
+    setSymbol("XAUUSD")
+    setRiskPct(0.5)
+    setSlPips(15)
+  }
+
+  useIdleReset(reset)
+
+  const pipValue = pipValueFor(symbol)
+  const riskAmount = account * (riskPct / 100)
+  const lotSize = slPips ? riskAmount / (slPips * pipValue) : 0
+
+  // assume average price for margin estimate
+  const assumedPrice =
+    symbol === "XAUUSD" ? 2000 : symbol === "NAS100" ? 17000 : 1.25
+
+  const margin =
+    (contractSize(symbol) * lotSize * assumedPrice) / leverage
+
+  const utilization = (margin / account) * 100
+  const utilTone =
+    utilization < 10 ? "emerald" : utilization < 25 ? "yellow" : "red"
+
+  return (
+    <TerminalCard title="Anti-Breach Risk Template (Recommended)">
+      <div className="flex items-center justify-between mb-4">
+        
+        <div />
+        <ResetButton onReset={reset} />
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-8">
+        {/* LEFT */}
+        <div className="space-y-6">
+          <OptionGroup
+            label="Account Size"
+            value={account}
+            options={[10000, 50000, 100000, 200000]}
+            onChange={setAccount}
+          />
+
+          <div className="flex items-center gap-2">
+  <OptionGroup
+    label={
+      <span className="flex items-center gap-2">
+        Leverage
+        <InfoTooltip text="Always double-check the leverage offered by your specific prop firm. Incorrect leverage assumptions can lead to inaccurate margin and lot size recommendations." />
+      </span>
+    }
+    value={leverage}
+    options={[15, 30, 50, 100]}
+    onChange={setLeverage}
+  />
+</div>
+
+
+<OptionGroup
+  label="Symbol"
+  value={symbol}
+  options={["XAUUSD", "NAS100", "GBPUSD", "EURUSD"]}
+  disabledOptions={["XAUUSD", "NAS100"]}
+  onChange={setSymbol}
+/>
+
+  
+
+          <OptionGroup
+            label="Risk %"
+            value={riskPct}
+            options={[0.3, 0.5, 1.0, 1.5]}
+            onChange={setRiskPct}
+          />
+
+          <OptionGroup
+            label="Stop Loss (pips)"
+            value={slPips}
+            options={[10, 15, 20, 25]}
+            onChange={setSlPips}
+          />
+
+          <InlineNotice
+            icon={<Shield className="h-4 w-4" />}
+            title="Why presets?"
+            desc="These are prop-friendly defaults that avoid margin pressure and over-risking."
+          />
+        </div>
+
+        {/* RIGHT */}
+        <div className="space-y-4 xl:sticky xl:top-24">
+          <KpiCard
+            title="Suggested Lot Size"
+            value={isFinite(lotSize) ? lotSize.toFixed(2) : "0.00"}
+            sub={`Risking ${riskPct}%`}
+            tone="emerald"
+          />
+
+          <KpiCard
+            title="Margin Required"
+            value={fmtMoney(margin)}
+            sub={`Utilization ${utilization.toFixed(2)}%`}
+            tone={utilTone}
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <KpiCard
+              title="Pip Value"
+              value={pipValue.toString()}
+              sub="Per 1.00 lot"
+              tone="neutral"
+            />
+            <KpiCard
+              title="Contract Size"
+              value={contractSize(symbol).toLocaleString()}
+              sub="Units"
+              tone="neutral"
+            />
+          </div>
         </div>
       </div>
     </TerminalCard>

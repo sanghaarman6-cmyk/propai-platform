@@ -729,6 +729,8 @@ export default function BacktesterPage() {
       <div className="pointer-events-none fixed inset-0 opacity-70">
         <div className="absolute -top-40 left-1/2 h-[420px] w-[820px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[90px]" />
         <div className="absolute top-44 left-1/3 h-[360px] w-[560px] -translate-x-1/2 rounded-full bg-violet-500/10 blur-[90px]" />
+                <div className="absolute right-[-220px] top-[120px] h-[620px] w-[620px] rounded-full bg-fuchsia-500/10 blur-3xl" />
+        <div className="absolute left-[30%] top-[65%] h-[520px] w-[520px] rounded-full bg-sky-500/10 blur-3xl" />
       </div>
       {/* hidden scrollbar utility (no globals needed) */}
       <style jsx global>{`
@@ -769,9 +771,25 @@ export default function BacktesterPage() {
           <div className="flex flex-col lg:flex-row xl:flex-col items-start gap-4">
             <div className="flex flex-wrap items-center gap-2">
               {/* Save / Reset */}
-              <Button variant="primary" onClick={() => setShowSave(true)} className="px-4 py-1.5 text-xs">
+              <Button
+                variant="primary"
+                disabled={!isDirty}
+                onClick={() => {
+                  if (backtestId && isDirty) {
+                    // editing an existing saved backtest
+                    setShowSave(true)
+                  } else if (!backtestId) {
+                    // brand new backtest
+                    setShowSave(true)
+                  } else {
+                    // no changes → nothing to save
+                    showSavedToast()
+                  }
+                }}
+              >
                 Save
               </Button>
+
 
               <Button
                 variant="ghost"
@@ -1175,14 +1193,17 @@ export default function BacktesterPage() {
               useBacktestSessionStore.getState().notes ??
               null
 
-            const overwrite = payload?.mode === "overwrite"
+            const overwrite =
+              payload?.mode === "overwrite" && Boolean(backtestId)
 
             const res = await saveBacktest({
-              name,
-              notes,
-              snapshot,
-              overwrite,
-            })
+  id: overwrite ? backtestId ?? undefined : undefined,
+  name,
+  notes,
+  snapshot,
+  overwrite,
+})
+
 
             if (!res.ok && res.reason === "DUPLICATE") {
               // modal already handled conflict UI
@@ -1190,7 +1211,11 @@ export default function BacktesterPage() {
             }
 
             // mark local session as saved (no id needed)
-            useBacktestSessionStore.getState().markSaved(name)
+            if (res.ok) {
+  useBacktestSessionStore.getState().markSaved(res.id)
+}
+
+
 
             setShowSave(false)
             showSavedToast()

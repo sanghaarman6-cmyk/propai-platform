@@ -27,7 +27,8 @@ import {
   RefreshCw,
   Newspaper,
   Globe2,
-  NewspaperIcon
+  NewspaperIcon,
+  Gem
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useMT5Store } from "@/lib/mt5Store"
@@ -54,7 +55,7 @@ const NAV: NavItem[] = [
 
   { label: "Edge AI", href: "/app/guru", icon: Bot, group: "AI & RULES", accent: "green" },
   { label: "Fundamentals", href: "/app/fundamentals", icon: Globe2, group: "AI & RULES" },
-  { label: "Rules", href: "/app/propfirm", icon: Shield, group: "AI & RULES" },
+  { label: "Prop Firms", href: "/app/propfirm", icon: Gem, group: "AI & RULES" },
 
   { label: "Accounts", href: "/app/accounts", icon: UserPen, group: "ACCOUNT" },
 ]

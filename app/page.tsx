@@ -818,24 +818,19 @@ export default function LandingPage() {
         </AnimatePresence>
       </div>
 
-      {/* Feature bullets */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {active.bullets.map((b, idx) => (
-          <div
-            key={idx}
-            className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
-          >
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-xs font-semibold text-white/70">
-                {idx + 1}
-              </span>
-              <div className="text-sm text-white/70">
-                {b}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+
+      {/* Feature bullets — compact single container */}
+<div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 space-y-3">
+  {active.bullets.map((b, idx) => (
+    <div key={idx} className="flex items-start gap-3">
+      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-400" />
+      <p className="text-sm text-white/70 leading-snug">
+        {b}
+      </p>
+    </div>
+  ))}
+</div>
+
     </div>
   </Container>
 </section>
