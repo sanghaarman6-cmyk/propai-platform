@@ -241,19 +241,32 @@ export function formatRangeShort(a: Date, b: Date) {
    ======================================================================== */
 
 export function money(n: number, decimals = 0) {
-  const sign = n >= 0 ? "+" : "-"
-  return `${sign}$${Math.abs(n).toLocaleString(undefined, {
+  const safe = Number(n.toFixed(decimals))
+  const sign = safe >= 0 ? "+" : "-"
+  return `${sign}$${Math.abs(safe).toLocaleString(undefined, {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   })}`
 }
 
+export function pct(n: number, decimals = 1) {
+  return `${Number(n.toFixed(decimals))}%`
+}
+
 export function compactMoney(n: number) {
   const abs = Math.abs(n)
-  if (abs >= 1_000_000) return `${n < 0 ? "-" : ""}${(abs / 1_000_000).toFixed(1)}M`
-  if (abs >= 1_000) return `${n < 0 ? "-" : ""}${(abs / 1_000).toFixed(1)}k`
-  return `${n < 0 ? "-" : ""}${abs}`
+
+  if (abs >= 1_000_000) {
+    return `${n < 0 ? "-" : ""}${Number((abs / 1_000_000).toFixed(1))}M`
+  }
+
+  if (abs >= 1_000) {
+    return `${n < 0 ? "-" : ""}${Number((abs / 1_000).toFixed(1))}k`
+  }
+
+  return `${n < 0 ? "-" : ""}${Number(abs.toFixed(2))}`
 }
+
 
 export function sumPnL(trades: Trade[]) {
   return trades.reduce((a, t) => a + t.pnl, 0)
@@ -973,7 +986,7 @@ const accountSize = account?.accountSize ?? 0
     <ArrowDownRight className="h-4 w-4" />
   )}
 
-  {performancePct.toFixed(2)}%
+  {pct(performancePct, 2)}%
 </div>
 
       </div>
@@ -1245,7 +1258,7 @@ return (
           <TopKPI
             icon={<Percent className="h-5 w-5 text-neutral-200" />}
             title="Win rate"
-            value={`${monthKPIs.winPct.toFixed(1)}%`}
+            value={`${pct(monthKPIs.winPct, 1)}%`}
             subtitle={`${monthKPIs.trades.length} trades`}
             pill={<Pill>0% Consistency</Pill>}
           />
@@ -1335,7 +1348,7 @@ return (
                   </span>
                 }
               />
-              <MiniStat label="Win rate" value={<span>{dayWin.toFixed(1)}%</span>} />
+              <MiniStat label="Win rate" value={<span>{pct(dayWin, 1)}%</span>} />
               <MiniStat
                 label="Avg / trade"
                 tone={dayAvg >= 0 ? "good" : "bad"}
@@ -1401,7 +1414,7 @@ return (
                   </span>
                 }
               />
-              <MiniStat label="Win rate" value={<span>{weekWin.toFixed(1)}%</span>} />
+              <MiniStat label="Win rate" value={<span>{pct(weekWin, 1)}%</span>} />
               <MiniStat
                 label="Avg / trade"
                 tone={weekAvg >= 0 ? "good" : "bad"}
