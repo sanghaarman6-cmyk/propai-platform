@@ -1129,7 +1129,16 @@ export default function FundamentalsPage() {
   const cross = snap?.crossMarket ?? []
   const anomalies = snap?.anomalies ?? []
   const cb = snap?.centralBanks ?? []
-  
+  useEffect(() => {
+  if (!snap) return
+  console.log("✅ snapshot received:", {
+    ts: new Date(snap.ts).toISOString(),
+    centralBanksCount: snap.centralBanks?.length ?? 0,
+    firstCB: snap.centralBanks?.[0],
+    calendarCount: snap.calendar?.length ?? 0,
+  })
+}, [snap])
+
 
   const [loadingPulse, setLoadingPulse] = useState(false)
 

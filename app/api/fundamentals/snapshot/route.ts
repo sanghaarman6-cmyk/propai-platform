@@ -247,7 +247,13 @@ export async function GET(req: Request) {
           console.error("❌ ffCalendar failed", e)
         }
 
-        const comms = await fetchAllCentralBanks(8)
+        const now = Date.now()
+
+        const comms = (await fetchAllCentralBanks(45))
+          .filter(c => c.ts <= now)
+          .sort((a, b) => b.ts - a.ts)
+
+                
         const cbEvents = mapCBToEvents(comms)
 
         const priceSeries = await Promise.all(
