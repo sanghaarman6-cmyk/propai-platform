@@ -1330,7 +1330,7 @@ export default function JournalPage() {
             <TopKPI
               icon={<Percent className="h-5 w-5 text-neutral-200" />}
               title="Win rate"
-              value={`${pct(monthKPIs.winPct, 1)}%`}
+              value={`${pct(monthKPIs.winPct, 1)}`}
               subtitle={`${monthKPIs.trades.length} trades`}
               pill={<Pill>{viewMode === "month" ? "Month" : viewMode === "year" ? "Year" : "All"}</Pill>}
             />
