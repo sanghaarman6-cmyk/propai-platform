@@ -1867,9 +1867,7 @@ function EventRowCompact({ e, onOpen, compact }: { e: MarketEvent; onOpen: () =>
           <div className="flex items-center gap-2">
             <span className={clsx("rounded-full px-2 py-0.5 text-[11px] ring-1", sourceBadge(e.source))}>{e.source}</span>
             <span className={clsx("rounded-full px-2 py-0.5 text-[11px] ring-1", impactBadge(e.impact))}>{e.impact}</span>
-            <span className={clsx("rounded-full px-2 py-0.5 text-[11px] ring-1", sentimentBadge(e.sentiment))}>
-              {e.sentiment}
-            </span>
+          
           </div>
           <p className="mt-2 text-sm font-semibold text-white/90 line-clamp-2">{e.title}</p>
           <p className="mt-1 text-xs text-text-muted line-clamp-2">{e.summary}</p>
@@ -2154,12 +2152,8 @@ function EventRow({ e, onOpen }: { e: MarketEvent; onOpen: () => void }) {
           <div className="flex flex-wrap items-center gap-2">
             <span className={clsx("rounded-full px-2 py-0.5 text-[11px] ring-1", sourceBadge(e.source))}>{e.source}</span>
             <span className={clsx("rounded-full px-2 py-0.5 text-[11px] ring-1", impactBadge(e.impact))}>{e.impact}</span>
-            <span className={clsx("rounded-full px-2 py-0.5 text-[11px] ring-1", sentimentBadge(e.sentiment))}>
-              {e.sentiment}
-            </span>
-            <span className={clsx("rounded-full px-2 py-0.5 text-[11px] ring-1", confPill(e.confidence))}>
-              {Math.round(e.confidence * 100)}% conf
-            </span>
+       
+        
           </div>
 
           <p className="mt-2 text-base font-semibold text-white/90 leading-snug">{e.title}</p>
@@ -2169,11 +2163,6 @@ function EventRow({ e, onOpen }: { e: MarketEvent; onOpen: () => void }) {
             {e.assets.map((a) => (
               <span key={a} className="rounded-full bg-black/30 ring-1 ring-white/10 px-2.5 py-1 text-xs text-white/80">
                 {a}
-              </span>
-            ))}
-            {e.tags.slice(0, 4).map((t) => (
-              <span key={t} className="rounded-full bg-white/5 ring-1 ring-white/10 px-2.5 py-1 text-xs text-white/60">
-                #{t}
               </span>
             ))}
           </div>
@@ -2191,69 +2180,6 @@ function EventRow({ e, onOpen }: { e: MarketEvent; onOpen: () => void }) {
   )
 }
 
-function CrossRowMini({
-  row,
-  watchlist,
-  toggleWatch,
-}: {
-  row: CrossMarketRow
-  watchlist: string[]
-  toggleWatch: (sym: string) => void
-}) {
-  const up = row.bias === "Long"
-  const down = row.bias === "Short"
-  const biasPill = up
-    ? "ring-emerald-500/30 bg-emerald-500/10 text-emerald-200"
-    : down
-    ? "ring-red-500/30 bg-red-500/10 text-red-200"
-    : "ring-white/10 bg-white/5 text-white/70"
-
-  return (
-    <div className="rounded-3xl bg-white/5 ring-1 ring-white/10 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-white">{row.symbol}</span>
-            <span className={clsx("rounded-full px-2 py-0.5 text-[11px] ring-1", biasPill)}>{row.bias}</span>
-            <span className="rounded-full bg-black/30 ring-1 ring-white/10 px-2 py-0.5 text-[11px] text-white/70">
-              {row.assetClass}
-            </span>
-          </div>
-          <p className="mt-2 text-xs text-text-muted line-clamp-2">{row.playbook}</p>
-        </div>
-
-        <div className="shrink-0 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => toggleWatch(row.symbol)}
-            className={clsx(
-              "rounded-xl p-2 ring-1 transition",
-              watchlist.includes(row.symbol)
-                ? "bg-amber-500/10 ring-amber-500/25 text-amber-200"
-                : "bg-black/30 ring-white/10 text-white/70 hover:bg-white/5"
-            )}
-            title={watchlist.includes(row.symbol) ? "Remove from watchlist" : "Add to watchlist"}
-          >
-            <Star className={clsx("h-4 w-4", watchlist.includes(row.symbol) ? "fill-current" : "")} />
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs text-white/70">
-          <span className={clsx("rounded-full px-2 py-0.5 text-[11px] ring-1", confPill(row.confidence))}>
-            {Math.round(row.confidence * 100)}% conf
-          </span>
-          <span className="text-white/50">•</span>
-          <span className="truncate">{row.catalysts[0]}</span>
-        </div>
-        <div className="text-white/70">
-          <Sparkline data={row.spark} />
-        </div>
-      </div>
-    </div>
-  )
-}
 
 /* -------------------------------------------------------------------------- */
 /*                                 Sentiment                                   */
