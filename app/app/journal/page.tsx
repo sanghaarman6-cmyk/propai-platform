@@ -1022,7 +1022,7 @@ function PnLTracker({ dayMap }: PnLTrackerProps) {
           )}
         >
           {performancePct >= 0 ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
-          {pct(performancePct, 2)}%
+          {pct(performancePct, 2)}
         </div>
       </div>
 
@@ -1365,7 +1365,7 @@ export default function JournalPage() {
                 value={money(monthKPIs.net, 0)}
                 tone={monthKPIs.net >= 0 ? "good" : "bad"}
               />
-              <MobileKPI label="Win" value={`${monthKPIs.winPct.toFixed(0)}%`} />
+              <MobileKPI label="Win" value={`${monthKPIs.winPct.toFixed(0)}`} />
               <MobileKPI label="Trades" value={monthKPIs.trades.length} />
               <MobileKPI label="Avg" value={money(monthKPIs.avg, 0)} tone={monthKPIs.avg >= 0 ? "good" : "bad"} />
             </div>
@@ -1470,7 +1470,7 @@ export default function JournalPage() {
               tone={dayNet >= 0 ? "good" : dayNet < 0 ? "bad" : "neutral"}
               value={<span className={dayNet >= 0 ? "text-emerald-300" : "text-red-300"}>{money(dayNet, 2)}</span>}
             />
-            <MiniStat label="Win rate" value={<span>{pct(dayWin, 1)}%</span>} />
+            <MiniStat label="Win rate" value={<span>{pct(dayWin, 1)}</span>} />
             <MiniStat
               label="Avg / trade"
               tone={dayAvg >= 0 ? "good" : "bad"}
@@ -1527,7 +1527,7 @@ export default function JournalPage() {
               tone={weekNet >= 0 ? "good" : weekNet < 0 ? "bad" : "neutral"}
               value={<span className={weekNet >= 0 ? "text-emerald-300" : "text-red-300"}>{money(weekNet, 2)}</span>}
             />
-            <MiniStat label="Win rate" value={<span>{pct(weekWin, 1)}%</span>} />
+            <MiniStat label="Win rate" value={<span>{pct(weekWin, 1)}</span>} />
             <MiniStat
               label="Avg / trade"
               tone={weekAvg >= 0 ? "good" : "bad"}
