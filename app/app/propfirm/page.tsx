@@ -1413,14 +1413,6 @@ export default function PropFirmsPage() {
                     icon={Target}
                     title="Programs"
                     subtitle="Select a program to view tiers, objectives, and rules"
-                    right={
-                      <Pill tone="good">
-                        <span className="inline-flex items-center gap-1">
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          editable
-                        </span>
-                      </Pill>
-                    }
                   />
 
                   <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
