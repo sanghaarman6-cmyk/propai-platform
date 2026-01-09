@@ -3,6 +3,8 @@
 
 import useSWR, { mutate } from "swr"
 import { RiskHeader } from "@/components/fundamentals/RiskHeader"
+import FundamentalsAIInsightCard from "@/components/providers/FundamentalsAIInsightCard"
+import ModalShell from "@/components/ui/ModalShell"
 
 import type { FundamentalsSnapshot } from "@/lib/fundamentals/types"
 
@@ -885,88 +887,6 @@ function GhostButton({
 
 
 
-export function MinimalModal({
-  open,
-  onClose,
-  title,
-  subtitle,
-  children,
-  widthClass = "max-w-4xl",
-}: {
-  open: boolean
-  onClose: () => void
-  title?: string
-  subtitle?: string
-  children: React.ReactNode
-  widthClass?: string
-}) {
-  // ESC to close
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose()
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [open, onClose])
-
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onPointerDown={onClose} // 👈 click outside closes
-        >
-          {/* BACKDROP */}
-          <motion.div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          />
-
-          {/* MODAL */}
-          <motion.div
-            className={clsx(
-              "relative w-full overflow-hidden rounded-3xl",
-              "bg-[#0f0f0f]/95 text-white",
-              "shadow-[0_40px_120px_rgba(0,0,0,0.65)]",
-              "ring-1 ring-white/10",
-              widthClass
-            )}
-            initial={{ y: 24, opacity: 0, scale: 0.98 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 24, opacity: 0, scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 260, damping: 22 }}
-            onPointerDown={(e) => e.stopPropagation()} // 👈 prevent close inside
-          >
-            {(title || subtitle) && (
-              <div className="border-b border-white/10 px-6 py-5">
-                {title && (
-                  <h3 className="text-lg font-semibold text-white">
-                    {title}
-                  </h3>
-                )}
-                {subtitle && (
-                  <p className="mt-1 text-sm text-white/50">
-                    {subtitle}
-                  </p>
-                )}
-              </div>
-            )}
-
-            <div className="p-6 max-h-[75vh] overflow-y-auto">
-              {children}
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  )
-}
 
 
 /* -------------------------------------------------------------------------- */
@@ -1010,47 +930,7 @@ export default function FundamentalsPage() {
 
 
   // Add inside FundamentalsPage() component (near onRefresh etc.)
-  async function openCachedAIInsight(kind: "event" | "calendar" | "central_bank", sourceId: string, payload: any) {
-    console.log("🔥 openCachedAIInsight CALLED", kind, sourceId)
-    setAiLoading(true)
-    setAiExplanation(null as any) // we’ll store AIEventInsight in this state, see step 6C
-
-
-    try {
-      const res = await fetch("/api/fundamentals/insight", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind, sourceId, payload }),
-      })
-
-      const json = await res.json()
-      if (!res.ok) throw new Error(json?.error ?? "Failed to generate insight")
-
-      setAiTitle(payload?.title ?? "Insight")
-      setAiSubtitle(payload?.subtitle ?? "")
-      setAiExplanation(json.insight) // store AIEventInsight
-    } catch (e: any) {
-      setAiTitle("Insight unavailable")
-      setAiSubtitle("")
-      setAiExplanation({
-        simpleSummary: "Could not generate an insight right now.",
-        whyItMatters: e?.message ?? "Unknown error",
-        marketImpact: { equities: "Neutral", fx: "Neutral", rates: "Neutral", metals: "Neutral", crypto: "Neutral" },
-        howToInterpret: ["Try again in a moment.", "Check server logs for provider errors."],
-        howToTrade: ["Reduce risk until context is clear."],
-        keyLevelsOrTriggers: [],
-        riskLevel: "Low",
-        confidence: 30,
-        disclaimer: "Educational only. Not financial advice.",
-      })
-    } finally {
-      setAiLoading(false)
-    }
-  }
-
-
-
-
+  
 
 
 
@@ -1156,11 +1036,7 @@ export default function FundamentalsPage() {
 
 
   const [aiFocusSymbol, setAiFocusSymbol] = useState<string>("NAS100")
-  const [aiTitle, setAiTitle] = useState<string>("")
-  const [aiSubtitle, setAiSubtitle] = useState<string>("")
 
-  const [aiExplanation, setAiExplanation] = useState<AIEventInsight | null>(null)
-  const [aiLoading, setAiLoading] = useState(false)
   const [cbDetail, setCbDetail] = useState<CBComm | null>(null)
   const [cbModalOpen, setCbModalOpen] = useState(false)
 
@@ -1230,22 +1106,7 @@ export default function FundamentalsPage() {
   const centralBanksRef = useRef<HTMLDivElement | null>(null)
 
 
-  useEffect(() => {
-    const map: Record<string, React.RefObject<HTMLDivElement | null>> = {
-      Overview: overviewRef,
-      Sentiment: sentimentRef,
-      Calendar: calendarRef,
-      "Central Banks": centralBanksRef,
-    }
 
-    const ref = map[tab]
-    if (ref?.current) {
-      ref.current.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      })
-    }
-  }, [tab])
 
   const filteredAnomalies = useMemo(() => {
     return anomalies.filter((a) => {
@@ -1411,7 +1272,7 @@ export default function FundamentalsPage() {
       </div>
       {/* Top header */}
       <div className="relative border-b border-white/5">
-        <div className="mx-auto max-w-[1400px] px-4 sm:px-6 py-4">
+        <div className="mx-auto max-w-[1680px] px-4 sm:px-6 py-4">
 
           {/* GRID HEADER */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4">
@@ -1484,344 +1345,343 @@ export default function FundamentalsPage() {
 
 
       {/* Main body */}
-      <div className="mx-auto w-full max-w-[1400px] px-4 sm:px-6 py-6">
-        {/* Hero KPIs */}
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-          <div className="lg:col-span-8">
-            <div className="rounded-3xl bg-black/30 ring-1 ring-white/10 p-5 sm:p-6 overflow-hidden relative">
-              <div className="pointer-events-none absolute inset-0">
-                <div className="absolute -top-24 -left-24 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
-                <div className="absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-sky-500/10 blur-3xl" />
+      {/* ================= MAIN BODY ================= */}
+<div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 py-6">
+
+  <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+
+    {/* ================= LEFT COLUMN (CONTINUOUS) ================= */}
+    <div className="space-y-6 min-w-0">
+
+      {/* ===== HERO / MARKET SNAPSHOT ===== */}
+      <div className="rounded-3xl bg-black/30 ring-1 ring-white/10 p-5 sm:p-6 overflow-hidden relative">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-24 -left-24 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
+          <div className="absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-sky-500/10 blur-3xl" />
+        </div>
+
+        <div className="relative">
+          <SectionTitle
+            icon={<Wand2 className="h-5 w-5 text-emerald-200" />}
+            title="Market Expectation Snapshot"
+            subtitle="Institutional-grade consolidation → one screen, one narrative, one reaction plan."
+            right={
+              <div className="flex items-center gap-2">
+                <Pill icon={<Clock className="h-3.5 w-3.5" />}>
+                  Updated {fmtTime(liveNow)}
+                </Pill>
+                <Pill icon={<Activity className="h-3.5 w-3.5" />} className="text-emerald-200">
+                  Regime: {safeMacro.regime}
+                </Pill>
               </div>
+            }
+          />
 
-              <div className="relative">
-                <SectionTitle
-                  icon={<Wand2 className="h-5 w-5 text-emerald-200" />}
-                  title="Market Expectation Snapshot"
-                  subtitle="Institutional-grade consolidation → one screen, one narrative, one reaction plan."
-                  right={
-                    <div className="flex items-center gap-2">
-                      <Pill className="text-white/80" icon={<Clock className="h-3.5 w-3.5" />}>
-                        Updated {fmtTime(liveNow)}
-                      </Pill>
-                      <Pill className="text-emerald-200" icon={<Activity className="h-3.5 w-3.5" />}>
-                        Regime: {safeMacro.regime}
-                      </Pill>
-                    </div>
-                  }
-                />
-
-                <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <Stat
-                    label="High-Impact Events (24h)"
-                    value={String(highImpactNext24h)}
-                    hint="Scheduled economic risk"
-                    icon={<TriangleAlert className="h-5 w-5" />}
-                    tone={highImpactNext24h > 0 ? "warn" : "good"}
-                  />
-
-                  <Stat
-                    label="Central Bank Risk (48h)"
-                    value={cbNext48h === 0 ? "None" : `${cbNext48h} speaker`}
-                    hint="Policy communication risk"
-                    icon={<Landmark className="h-5 w-5" />}
-                    tone={cbNext48h > 0 ? "warn" : "good"}
-                  />
-
-                  <Stat
-                    label="Volatility State"
-                    value={volatilityState}
-                    hint="Based on anomaly activity"
-                    icon={<Activity className="h-5 w-5" />}
-                    tone={
-                      volatilityState === "High"
-                        ? "warn"
-                        : volatilityState === "Low"
-                        ? "good"
-                        : "neutral"
-                    }
-                  />
-
-                  <Stat
-                    label="Trend Alignment"
-                    value={`${trendAlignment.aligned}/${trendAlignment.total}`}
-                    hint="Key markets aligned"
-                    icon={<TrendingUp className="h-5 w-5" />}
-                    tone={trendAlignment.aligned >= 3 ? "good" : "neutral"}
-                  />
-
-                </div>
-
-                <div className="mt-4 rounded-2xl bg-white/5 ring-1 ring-white/10 p-4">
-                  <p className="text-sm text-white/90 font-semibold">{safeMacro.headline}</p>
-                  <div className="mt-4 rounded-2xl bg-white/5 ring-1 ring-white/10 p-4 space-y-1">
-                    <p className="text-sm font-semibold text-white">Market State</p>
-                    <p className="text-sm text-text-muted">
-                      • Events today: {highImpactNext24h}
-                    </p>
-                    <p className="text-sm text-text-muted">
-                      • Central banks next 48h: {cbNext48h}
-                    </p>
-                    <p className="text-sm text-text-muted">
-                      • Volatility: {volatilityState}
-                    </p>
-                    <p className="text-sm text-text-muted">
-                      • Trend alignment: {trendAlignment.aligned}/{trendAlignment.total}
-                    </p>
-                  </div>
-
-                </div>
-
-                <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
-                  <ProgressBar
-                    label="Event Density"
-                    value={Math.min(100, highImpactNext24h * 25)}
-                    left="Quiet"
-                    right="Crowded"
-                    tone={highImpactNext24h > 1 ? "warn" : "neutral"}
-                  />
-
-                  <ProgressBar
-                    label="Market Instability"
-                    value={Math.min(100, anomalies.length * 20)}
-                    left="Stable"
-                    right="Unstable"
-                    tone={volatilityState === "High" ? "warn" : "neutral"}
-                  />
-
-                </div>
-              <Divider className="my-5" />
-                <div className="flex items-start gap-4">
-                {/* LEFT: title + description */}
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-white">
-                    Market Risk Mode
-                  </p>
-                  <p className="mt-1 text-xs text-text-muted">
-                    {risk.desc}
-                  </p>
-                </div>
-
-                {/* RIGHT: risk pill */}
-                <button
-                  type="button"
-                  className={clsx(
-                    "shrink-0 ml-auto inline-flex items-center gap-2 rounded-full px-3 py-1.5",
-                    "text-xs font-semibold ring-1 transition-all",
-                    "hover:scale-[1.02] active:scale-[0.98]",
-                    riskModePill(risk.mode)
-                  )}
-                  title="Overall posture for sizing and execution today"
-                >
-                  <span
-                    className={clsx(
-                      "h-2 w-2 rounded-full",
-                      riskModeDot(risk.mode)
-                    )}
-                  />
-                  {risk.mode}
-                </button>
-              </div>
-            </div>
+          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Stat
+              label="High-Impact Events (24h)"
+              value={String(highImpactNext24h)}
+              icon={<TriangleAlert className="h-5 w-5" />}
+              tone={highImpactNext24h > 0 ? "warn" : "good"}
+            />
+            <Stat
+              label="Central Bank Risk (48h)"
+              value={cbNext48h === 0 ? "None" : `${cbNext48h} speaker`}
+              icon={<Landmark className="h-5 w-5" />}
+              tone={cbNext48h > 0 ? "warn" : "good"}
+            />
+            <Stat
+              label="Volatility State"
+              value={volatilityState}
+              icon={<Activity className="h-5 w-5" />}
+              tone={volatilityState === "High" ? "warn" : volatilityState === "Low" ? "good" : "neutral"}
+            />
+            <Stat
+              label="Trend Alignment"
+              value={`${trendAlignment.aligned}/${trendAlignment.total}`}
+              icon={<TrendingUp className="h-5 w-5" />}
+              tone={trendAlignment.aligned >= 3 ? "good" : "neutral"}
+            />
           </div>
         </div>
+        {/* ===== MARKET RISK MODE ===== */}
+<Divider className="my-5" />
 
-          {/* Right column quick panels */}
-          <div className="lg:col-span-4">
-            <div className="grid grid-cols-1 gap-3">
-              <MiniPanel
-                title="What’s moving markets"
-                subtitle="Real-time sentiment feed"
-                icon={<Newspaper className="h-5 w-5 text-emerald-200" />}
-                right={
-                  <Pill
-                    icon={<Zap className="h-3.5 w-3.5" />}
-                    className={clsx(isLive ? "text-emerald-200" : "text-white/70")}
-                  >
-                    {isLive ? "Streaming" : "Paused"}
-                  </Pill>
-                }
-              >
-                <div className={clsx("space-y-2", prefs.compactMode ? "" : "mt-1")}>
-                  {filteredEvents.slice(0, 5).map((e) => (
-                    <EventRowCompact key={e.id} e={e} onOpen={() => openEvent(e)} compact={prefs.compactMode} />
-                  ))}
-                </div>
+<div className="flex items-start gap-4">
+  {/* LEFT */}
+  <div className="min-w-0 flex-1">
+    <p className="text-sm font-semibold text-white">
+      Market Risk Mode
+    </p>
+    <p className="mt-1 text-xs text-text-muted">
+      {risk.desc}
+    </p>
+  </div>
 
-                <div className="mt-3 flex items-center justify-between">
-                  <GhostButton
-                    icon={<AlignLeft className="h-4 w-4" />}
-                    onClick={() => {
-                      setTab("Sentiment")
+  {/* RIGHT */}
+  <button
+    type="button"
+    className={clsx(
+      "shrink-0 ml-auto inline-flex items-center gap-2 rounded-full px-3 py-1.5",
+      "text-xs font-semibold ring-1 transition-all",
+      "hover:scale-[1.02] active:scale-[0.98]",
+      riskModePill(risk.mode)
+    )}
+    title="Overall posture for sizing and execution today"
+  >
+    <span
+      className={clsx(
+        "h-2 w-2 rounded-full",
+        riskModeDot(risk.mode)
+      )}
+    />
+    {risk.mode}
+  </button>
+</div>
 
-                      requestAnimationFrame(() => {
-                        document
-                          .getElementById("sentiment-feed")
-                          ?.scrollIntoView({ behavior: "smooth", block: "start" })
-                      })
-                    }}
-                  >
-                    View feed
-                  </GhostButton>
-
-                  <GhostButton
-                    icon={<Bot className="h-4 w-4" />}
-                    className="opacity-50 pointer-events-none cursor-not-allowed"
-                  >
-                    Summarise
-                  </GhostButton>
-
-
-                </div>
-              </MiniPanel>
-
-              <MiniPanel
-                title="Upcoming high-impact"
-                subtitle="Economic + central bank risk"
-                icon={<CalendarClock className="h-5 w-5 text-emerald-200" />}
-                right={<Pill icon={<AlarmClock className="h-3.5 w-3.5" />}>{uiCalendar.length} events</Pill>}
-              >
-                <div className="space-y-2">
-                  {filteredCalendar.slice(0, 4).map((c) => (
-                    <CalendarRowCompact key={c.id} c={c} />
-                  ))}
-                </div>
-
-                <div className="mt-3 flex items-center justify-between">
-                  <GhostButton icon={<CalendarClock className="h-4 w-4" />} onClick={() => setTab("Calendar")}>
-                    Open calendar
-                  </GhostButton>
-                  <GhostButton icon={<Landmark className="h-4 w-4" />} onClick={() => setTab("Central Banks")}>
-                    Central banks
-                  </GhostButton>
-                </div>
-              </MiniPanel>
-
-              
-            </div>
-          </div>
-        </div>
-
-        {/* Tab bodies */}
-        <div className="mt-6" id="sentiment-feed">
-          {tab === "Overview" && (
-            <div ref={overviewRef} className="scroll-anchor">
-              <OverviewTab
-                      snap={snap}
-                      prefs={prefs}
-                      setPrefs={setPrefs}
-                      macro={snap?.macro ?? safeMacro}
-                      events={filteredEvents}
-                      calendar={filteredCalendar}
-                      watchlist={watchlist}
-                      toggleWatch={toggleWatch}
-                      openEvent={openEvent}
-                    />
-            </div>
-          )}
-
-          {tab === "Sentiment" && (
-            <div ref={sentimentRef} className="scroll-anchor">
-              <SentimentTab
-                      prefs={prefs}
-                      setPrefs={setPrefs}
-                      events={filteredEvents}
-                      openEvent={openEvent}
-                    />
-            </div>
-          )}
-
-          {tab === "Calendar" && (
-            <div ref={calendarRef} className="scroll-anchor">
-              <CalendarTab
-                    calendar={filteredCalendar}
-                    prefs={prefs}
-                    openCachedAIInsight={openCachedAIInsight}
-                  />
-            </div>
-          )}
-
-          {tab === "Central Banks" && (
-            <div ref={centralBanksRef} className="scroll-anchor">
-              <CentralBanksTab
-                      comms={filteredCB}
-                      prefs={prefs}
-                      onOpen={openCentralBankModal}
-                    />
-            </div>
-          )}
-
-        </div>
       </div>
+
+      {/* ===== TAB CONTENT (MUST LIVE HERE) ===== */}
+      <div id="sentiment-feed" className="space-y-6">
+
+        {tab === "Overview" && (
+          <div ref={overviewRef}>
+            <OverviewTab
+              snap={snap}
+              prefs={prefs}
+              setPrefs={setPrefs}
+              macro={safeMacro}
+              events={filteredEvents}
+              calendar={filteredCalendar}
+              watchlist={watchlist}
+              toggleWatch={toggleWatch}
+              openEvent={openEvent}
+            />
+          </div>
+        )}
+
+        {tab === "Sentiment" && (
+          <div ref={sentimentRef}>
+            <SentimentTab
+              prefs={prefs}
+              setPrefs={setPrefs}
+              events={filteredEvents}
+              openEvent={openEvent}
+            />
+          </div>
+        )}
+
+        {tab === "Calendar" && (
+          <div ref={calendarRef}>
+            <CalendarTab
+              calendar={filteredCalendar}
+              prefs={prefs}
+            />
+          </div>
+        )}
+
+        {tab === "Central Banks" && (
+          <div ref={centralBanksRef}>
+            <CentralBanksTab
+              comms={filteredCB}
+              prefs={prefs}
+              onOpen={openCentralBankModal}
+            />
+          </div>
+        )}
+
+      </div>
+    </div>
+
+    {/* ================= RIGHT RAIL ================= */}
+    <div className="space-y-3 lg:sticky lg:top-24 self-start">
+
+      <MiniPanel
+        title="What’s moving markets"
+        subtitle="Real-time sentiment feed"
+        icon={<Newspaper className="h-5 w-5 text-emerald-200" />}
+        right={
+          <Pill icon={<Zap className="h-3.5 w-3.5" />} className={isLive ? "text-emerald-200" : ""}>
+            {isLive ? "Streaming" : "Paused"}
+          </Pill>
+        }
+      >
+        <div className="space-y-2">
+          {filteredEvents.slice(0, 5).map((e) => (
+            <EventRowCompact
+              key={e.id}
+              e={e}
+              onOpen={() => openEvent(e)}
+              compact={prefs.compactMode}
+            />
+          ))}
+        </div>
+        <div className="mt-3 flex items-center justify-between">
+        <GhostButton
+          icon={<AlignLeft className="h-4 w-4" />}
+          onClick={() => {
+            setTab("Sentiment")
+            requestAnimationFrame(() => {
+              document
+                .getElementById("sentiment-feed")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            })
+          }}
+        >
+          View feed
+        </GhostButton>
+
+        <GhostButton
+          icon={<Bot className="h-4 w-4" />}
+          className="opacity-50 pointer-events-none cursor-not-allowed"
+        >
+          Summarise
+        </GhostButton>
+      </div>
+      </MiniPanel>
+
+      <MiniPanel
+        title="Upcoming high-impact"
+        subtitle="Economic + central bank risk"
+        icon={<CalendarClock className="h-5 w-5 text-emerald-200" />}
+        right={<Pill>{filteredCalendar.length} events</Pill>}
+      >
+        <div className="space-y-2">
+          {filteredCalendar.slice(0, 4).map((c) => (
+            <CalendarRowCompact key={c.id} c={c} />
+          ))}
+        </div>
+        <div className="mt-3 flex items-center justify-between">
+        <GhostButton
+          icon={<CalendarClock className="h-4 w-4" />}
+          onClick={() => setTab("Calendar")}
+        >
+          Open calendar
+        </GhostButton>
+
+        <GhostButton
+          icon={<Landmark className="h-4 w-4" />}
+          onClick={() => setTab("Central Banks")}
+        >
+          Central banks
+        </GhostButton>
+      </div>
+
+      </MiniPanel>
+
+    </div>
+  </div>
+</div>
+
 
       
       {/* Event modal */}
-      <MinimalModal
-        open={detailOpen}
-        onClose={() => setDetailOpen(false)}
-        title={detail?.title ?? "Event"}
-        subtitle={detail ? `${detail.source} • ${detail.impact} • ${fmtTime(detail.ts)}` : undefined}
-        widthClass="max-w-5xl"
-      >
-        {detail ? (
-          <EventDetail
-            e={detail}
-            onToggleWatch={toggleWatch}
-            watchlist={watchlist}
-          />
+      {detail && (
+          <ModalShell
+            title={detail.title}
+            subtitle={`${detail.source} • ${detail.impact} • ${fmtTime(detail.ts)}`}
+            onClose={() => setDetail(null)}
+          >
+            <div className="flex flex-col gap-4">
+
+              {/* LEFT */}
+              <div className="space-y-3">
+                <RiskHeader
+                  level={detail.impact}
+                  subtitle={detail.source}
+                />
+
+                <div className="rounded-3xl bg-white/[0.03] p-4 ring-1 ring-white/10">
+                  <p className="text-sm text-white/80 leading-relaxed">
+                    {detail.summary}
+                  </p>
+                </div>
+              </div>
+
+              {/* RIGHT */}
+              <FundamentalsAIInsightCard
+                title="Market Event AI Insight"
+                endpoint="/api/fundamentals/insight"
+                cacheKey={`fundamentals:event:${detail.id}`}
+                payload={{
+                  kind: "event",
+                  sourceId: detail.id,
+                  payload: {
+                    title: detail.title,
+                    source: detail.source,
+                    impact: detail.impact,
+                    ts: detail.ts,
+                    assets: detail.assets,
+                    tags: detail.tags,
+                  },
+                }}
+              />
+
+            </div>
+          </ModalShell>
+        )}
 
 
-        ) : null}
-      </MinimalModal>
+      {cbDetail && (
+  <ModalShell
+    title={cbDetail.title}
+    subtitle={`${cbDetail.bank} • ${cbDetail.speaker}`}
+    onClose={() => setCbDetail(null)}
+  >
+    <div className="flex flex-col gap-4">
 
-      <MinimalModal
-        open={cbModalOpen}
-        onClose={() => setCbModalOpen(false)}
-        widthClass="max-w-4xl"
-      >
-        {cbDetail && <CentralBankEventAI comm={cbDetail} />}
-      </MinimalModal>
+      {/* LEFT */}
+      <div className="space-y-3">
+        <RiskHeader
+          level={
+            cbDetail.hawkDove >= 35
+              ? "High"
+              : cbDetail.hawkDove <= -35
+              ? "Medium"
+              : "Low"
+          }
+          subtitle={cbDetail.bank}
+        />
+
+        <div className="rounded-3xl bg-white/[0.03] p-4 ring-1 ring-white/10">
+          <p className="text-sm text-white/80 leading-relaxed">
+            {cbDetail.summary}
+          </p>
+        </div>
+      </div>
+
+      {/* RIGHT */}
+      <FundamentalsAIInsightCard
+        title="Central Bank AI Insight"
+        endpoint="/api/fundamentals/insight"
+        cacheKey={`fundamentals:cb:${cbDetail.id}`}
+        payload={{
+          kind: "central_bank",
+          sourceId: cbDetail.id,
+          payload: {
+            title: cbDetail.title,
+            bank: cbDetail.bank,
+            speaker: cbDetail.speaker,
+            hawkDove: cbDetail.hawkDove,
+            summary: cbDetail.summary,
+            keyQuotes: cbDetail.keyQuotes,
+            watchlistImpacts: cbDetail.watchlistImpacts,
+          },
+        }}
+      />
+
+    </div>
+  </ModalShell>
+)}
+
 
     </div>
   )
 }
 
 function CentralBankEventAI({ comm }: { comm: CBComm }) {
-  const [loading, setLoading] = useState(false)
-  const [insight, setInsight] = useState<any>(null)
-
-  async function runAI() {
-    setLoading(true)
-
-    const res = await fetch("/api/fundamentals/insight", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        kind: "central_bank",
-        sourceId: comm.id,
-        payload: {
-          title: comm.title,
-          bank: comm.bank,
-          speaker: comm.speaker,
-          ts: comm.ts,
-          hawkDove: comm.hawkDove,
-          summary: comm.summary,
-          keyQuotes: comm.keyQuotes,
-          watchlistImpacts: comm.watchlistImpacts,
-          isHoliday: false,
-          hasPolicyDecision: false,
-        },
-      }),
-    })
-
-    const json = await res.json()
-    setInsight(json.insight)
-    setLoading(false)
-  }
-
   return (
     <div className="space-y-4">
-      {/* SAME RISK HEADER */}
       <RiskHeader
         level={
           comm.hawkDove >= 35
@@ -1833,64 +1693,27 @@ function CentralBankEventAI({ comm }: { comm: CBComm }) {
         subtitle={`${comm.bank} • ${comm.speaker}`}
       />
 
-      {/* AI — IDENTICAL TO CALENDAR */}
-      <div className="rounded-3xl bg-black/25 ring-1 ring-white/10 p-5">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-white">Edge AI Insight</p>
-
-          <PrimaryButton
-            icon={<Bot className={clsx("h-4 w-4", loading && "animate-spin")} />}
-            onClick={runAI}
-          >
-            {insight ? "Refresh Insight" : "Ask Edge AI"}
-          </PrimaryButton>
-        </div>
-
-        <div className="mt-4 space-y-4 text-sm text-white/90">
-          {loading && <p className="text-white/60">Generating insight…</p>}
-
-          {insight && (
-            <>
-              <Section title="Summary" text={insight.simpleSummary} />
-
-              <Section
-                title="Why it matters"
-                bullets={insight.whyItMatters?.bullets}
-              />
-
-              <Section
-                title="How to trade it"
-                bullets={insight.howToTrade}
-              />
-
-              {/* TEXT MARKET REACTION */}
-              <div className="rounded-3xl bg-white/5 ring-1 ring-white/10 p-5">
-                <p className="text-sm font-semibold text-white">
-                  Typical market reaction
-                </p>
-
-                <p className="mt-2 text-sm text-white/80 leading-relaxed">
-                  {buildMarketReactionText(insight.marketImpact)}
-                </p>
-
-                <ul className="mt-3 space-y-2">
-                  {buildMarketReactionBullets(insight.marketImpact).map(
-                    (b: string, i: number) => (
-                      <li
-                        key={i}
-                        className="flex items-start gap-2 text-sm text-white/75"
-                      >
-                        <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" />
-                        <span>{b}</span>
-                      </li>
-                    )
-                  )}
-                </ul>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+      <FundamentalsAIInsightCard
+        title="Central Bank AI Insight"
+        endpoint="/api/fundamentals/insight"
+        cacheKey={`fundamentals:cb:${comm.id}`}
+        payload={{
+          kind: "central_bank",
+          sourceId: comm.id,
+          payload: {
+            title: comm.title,
+            bank: comm.bank,
+            speaker: comm.speaker,
+            ts: comm.ts,
+            hawkDove: comm.hawkDove,
+            summary: comm.summary,
+            keyQuotes: comm.keyQuotes,
+            watchlistImpacts: comm.watchlistImpacts,
+            isHoliday: false,
+            hasPolicyDecision: false,
+          },
+        }}
+      />
     </div>
   )
 }
@@ -2692,16 +2515,12 @@ function startOfWeekUTC(ts: number) {
 function CalendarTab({
   calendar,
   prefs,
-  openCachedAIInsight,
 }: {
   calendar: UICalendarEvent[]
   prefs: UserPrefs
-  openCachedAIInsight: (
-    kind: "event" | "calendar" | "central_bank",
-    sourceId: string,
-    payload: any
-  ) => Promise<void> | void
 }) {
+
+
 
 const [selectedEvent, setSelectedEvent] = useState<UICalendarEvent | null>(null)
 
@@ -2819,18 +2638,53 @@ console.log({
               </Panel>
               )}
               {selectedEvent && (
-                <MinimalModal
-                open={!!selectedEvent}
-                onClose={() => setSelectedEvent(null)}
-                
-                
-              >
-                <CalendarEventAI
-                  event={selectedEvent}
-                  openCachedAIInsight={openCachedAIInsight}
-                />
-              </MinimalModal>
-              )}
+  <ModalShell
+    title={selectedEvent.title}
+    subtitle={`${selectedEvent.region} • ${selectedEvent.impact}`}
+    onClose={() => setSelectedEvent(null)}
+  >
+    <div className="flex flex-col gap-4">
+
+      {/* LEFT */}
+      <div className="space-y-3">
+        <RiskHeader
+          level={selectedEvent.impact}
+          subtitle={selectedEvent.type}
+        />
+
+        {selectedEvent.notes && (
+          <div className="rounded-3xl bg-white/[0.03] p-4 ring-1 ring-white/10">
+            <p className="text-sm text-white/80">
+              {selectedEvent.notes}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* RIGHT */}
+      <FundamentalsAIInsightCard
+        title="Economic Event AI Insight"
+        endpoint="/api/fundamentals/insight"
+        cacheKey={`fundamentals:calendar:${selectedEvent.id}`}
+        payload={{
+          kind: "calendar",
+          sourceId: selectedEvent.id,
+          payload: {
+            title: selectedEvent.title,
+            region: selectedEvent.region,
+            impact: selectedEvent.impact,
+            ts: selectedEvent.ts,
+            type: selectedEvent.type,
+            assets: selectedEvent.watch ?? [],
+          },
+        }}
+      />
+
+    </div>
+  </ModalShell>
+)}
+
+     
             </div>
           )
         }
@@ -2884,121 +2738,48 @@ function buildMarketReactionBullets(impact: any): string[] {
 
 function CalendarEventAI({
   event,
-  openCachedAIInsight,
 }: {
   event: UICalendarEvent
-  openCachedAIInsight: (
-    kind: "event" | "calendar" | "central_bank",
-    sourceId: string,
-    payload: any
-  ) => Promise<void> | void
 }) {
-  const [loading, setLoading] = useState(false)
-  const [insight, setInsight] = useState<AIEventInsight | null>(null)
-
-
-  async function runAI() {
-    setLoading(true)
-
-    const res = await fetch("/api/fundamentals/insight", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        kind: "calendar",
-        sourceId: event.id,
-        payload: {
-          title: event.title,
-          region: event.region,
-          impact: event.impact,
-          ts: event.ts,
-          type: event.type,
-          notes: event.notes,
-          assets: event.watch ?? [],
-          isHoliday: false,
-          hasPolicyDecision: false,
-        },
-      }),
-    })
-
-    const json = await res.json()
-    setInsight(json.insight)
-    setLoading(false)
-  }
-
   return (
     <div className="space-y-4">
       <RiskHeader
         level={event.impact}
-        subtitle={`${event.region} ${event.type ? `• ${event.type}` : ""}`.trim()}
+        subtitle={`${event.region}${event.type ? ` • ${event.type}` : ""}`}
       />
 
       {event.notes ? (
         <div className="rounded-3xl bg-white/5 ring-1 ring-white/10 p-5">
-          <p className="text-sm text-white/80 leading-relaxed">{event.notes}</p>
+          <p className="text-sm text-white/80 leading-relaxed">
+            {event.notes}
+          </p>
         </div>
       ) : null}
 
-      {/* AI */}
-      <div className="rounded-3xl bg-black/25 ring-1 ring-white/10 p-5">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-white">Edge AI Insight</p>
-
-          <PrimaryButton
-            icon={<Bot className={clsx("h-4 w-4", loading && "animate-spin")} />}
-            onClick={runAI}
-          >
-            {insight ? "Refresh Insight" : "Ask Edge AI"}
-          </PrimaryButton>
-        </div>
-
-        <div className="mt-4 space-y-4 text-sm text-white/90">
-          {loading && <p className="text-white/60">Generating insight…</p>}
-
-          {insight && (
-            <>
-              <Section title="Summary" text={insight.simpleSummary} />
-
-              <Section
-                title="Why it matters"
-                bullets={insight.whyItMatters?.bullets}
-              />
-
-              <Section
-                title="How to trade it"
-                bullets={insight.howToTrade}
-              />
-
-              {/* TYPICAL MARKET REACTION (TEXT) */}
-              <div className="rounded-3xl bg-white/5 ring-1 ring-white/10 p-5">
-                <p className="text-sm font-semibold text-white">
-                  Typical market reaction
-                </p>
-
-                <p className="mt-2 text-sm text-white/80 leading-relaxed">
-                  {buildMarketReactionText(insight.marketImpact)}
-                </p>
-
-                <ul className="mt-3 space-y-2">
-                  {buildMarketReactionBullets(insight.marketImpact).map(
-                    (b: string, i: number) => (
-                      <li
-                        key={i}
-                        className="flex items-start gap-2 text-sm text-white/75"
-                      >
-                        <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" />
-                        <span>{b}</span>
-                      </li>
-                    )
-                  )}
-                </ul>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+      <FundamentalsAIInsightCard
+        title="Economic Event AI Insight"
+        endpoint="/api/fundamentals/insight"
+        cacheKey={`fundamentals:calendar:${event.id}`}
+        payload={{
+          kind: "calendar",
+          sourceId: event.id,
+          payload: {
+            title: event.title,
+            region: event.region,
+            impact: event.impact,
+            ts: event.ts,
+            type: event.type,
+            notes: event.notes,
+            assets: event.watch ?? [],
+            isHoliday: false,
+            hasPolicyDecision: false,
+          },
+        }}
+      />
     </div>
   )
 }
+
 function Section({
   title,
   text,
@@ -3281,28 +3062,16 @@ function CentralBanksTab({
 
 function EventDetail({
   e,
-  onToggleWatch,
-  watchlist,
 }: {
   e: MarketEvent
-  onToggleWatch: (sym: string) => void
-  watchlist: string[]
 }) {
-  const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [insight, setInsight] = useState<any | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  async function askAI() {
-    setOpen(true)
-    setLoading(true)
-    setError(null)
-
-    try {
-      const res = await fetch("/api/fundamentals/insight", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+  return (
+    <div className="space-y-4">
+      <FundamentalsAIInsightCard
+        title="Market Event AI Insight"
+        endpoint="/api/fundamentals/insight"
+        cacheKey={`fundamentals:event:${e.id}`}
+        payload={{
           kind: "event",
           sourceId: e.id,
           payload: {
@@ -3314,89 +3083,12 @@ function EventDetail({
             assets: e.assets,
             tags: e.tags,
           },
-        }),
-      })
-
-      const json = await res.json()
-      if (!res.ok) throw new Error(json?.error ?? "Failed to generate insight")
-
-      setInsight(json.insight)
-    } catch (err: any) {
-      setError(err.message ?? "Something went wrong")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const confidencePct =
-    insight?.confidence != null
-      ? Math.round(
-          insight.confidence <= 1
-            ? insight.confidence * 100
-            : insight.confidence
-        )
-      : null
-
-  return (
-    <div className="space-y-4">
-      <div className="rounded-3xl bg-black/25 ring-1 ring-white/10 p-5">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-white">Edge AI Insight</p>
-
-          <PrimaryButton
-            icon={<Bot className={clsx("h-4 w-4", loading && "animate-spin")} />}
-            onClick={askAI}
-            title="Generate AI explanation"
-          >
-            {insight ? "Refresh Insight" : "Ask Edge AI"}
-          </PrimaryButton>
-        </div>
-
-        {/* Body */}
-        {open && (
-          <div className="mt-4 space-y-4 text-sm text-white/90">
-            {loading && (
-              <p className="text-white/60">Generating insight…</p>
-            )}
-
-            {error && (
-              <p className="text-red-300 text-sm">{error}</p>
-            )}
-
-            {!loading && insight && (
-              <>
-                <div>
-                  <p className="font-semibold">Summary</p>
-                  <p className="text-text-muted">
-                    {insight.simpleSummary ?? insight.summary}
-                  </p>
-                </div>
-
-                <div>
-       
-
-                  <p className="mt-1 text-sm font-medium text-white/90">
-                    {insight.whyItMatters?.headline}
-                  </p>
-
-                  <ul className="mt-2 space-y-1.5 text-sm text-text-muted">
-                    {insight.whyItMatters?.bullets?.map((b: string, i: number) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <span className="mt-2 h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                        <span>{b}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-      </div>
+        }}
+      />
     </div>
   )
 }
+
 
 
 
