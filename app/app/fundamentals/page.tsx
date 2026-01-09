@@ -1547,9 +1547,13 @@ export default function FundamentalsPage() {
         right={<Pill>{filteredCalendar.length} events</Pill>}
       >
         <div className="space-y-2">
-          {filteredCalendar.slice(0, 4).map((c) => (
-            <CalendarRowCompact key={c.id} c={c} />
-          ))}
+          {filteredCalendar
+            .filter((c) => c.impact === "High" || c.impact === "Extreme")
+            .slice(0, 4)
+            .map((c) => (
+              <CalendarRowCompact key={c.id} c={c} />
+            ))}
+
         </div>
         <div className="mt-3 flex items-center justify-between">
         <GhostButton

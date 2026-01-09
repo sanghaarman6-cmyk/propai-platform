@@ -36,7 +36,7 @@ export default function ModalShell({
       >
         {/* Backdrop */}
         <motion.div
-          className="absolute inset-0 bg-black/65 backdrop-blur-xl"
+          className="fixed inset-0 bg-black/65 backdrop-blur-xl"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
