@@ -10,7 +10,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// ⬇️ THIS IS YOUR EXISTING LOGIC — UNCHANGED
 async function ingest() {
   const FEEDS = [
     { name: "thisweek", url: "https://nfs.faireconomy.media/ff_calendar_thisweek.json" },
@@ -31,13 +30,11 @@ async function ingest() {
       },
     })
 
-    const text = await res.text()
-
     if (!res.ok) continue
 
     let json: any
     try {
-      json = JSON.parse(text)
+      json = await res.json()
     } catch {
       continue
     }
@@ -49,45 +46,59 @@ async function ingest() {
     return NextResponse.json({ ok: false, error: "no_raw_events" }, { status: 502 })
   }
 
-  const maxRaw = new Date(
-    Math.max(...rawEvents.map((e: any) => new Date(e.date).getTime()))
-  ).toISOString()
-
   const events = normalizeForexFactory(rawEvents, { includeHolidays: true })
+
+  // 🔒 DEFENSIVE NORMALIZATION (THIS IS THE IMPORTANT PART)
+  const rows = events
+    .filter(e => e.id && e.datetimeISO)
+    .map(e => ({
+      id: e.id,
+      title: e.title ?? "",
+      country: e.country ?? null,
+      currency: e.currency ?? null,
+
+      // normalize enum
+      impact: e.impact === "Holiday" ? "Low" : e.impact ?? "Low",
+
+      // force valid timestamptz
+      datetime_iso: new Date(e.datetimeISO).toISOString(),
+
+      // empty string → null (critical)
+      forecast: e.forecast && e.forecast.trim() !== "" ? e.forecast : null,
+      previous: e.previous && e.previous.trim() !== "" ? e.previous : null,
+      actual: e.actual && String(e.actual).trim() !== "" ? e.actual : null,
+
+      note: e.note ?? null,
+
+      // always array
+      affected_symbols: Array.isArray(e.affectedSymbols)
+        ? e.affectedSymbols
+        : [],
+
+      source: "ForexFactory",
+    }))
 
   const { error } = await supabase
     .from("news_events")
-    .upsert(
-      events.map((e) => ({
-        id: e.id,
-        title: e.title,
-        country: e.country,
-        currency: e.currency,
-        impact: e.impact,
-        datetime_iso: e.datetimeISO,
-        forecast: e.forecast,
-        previous: e.previous,
-        actual: e.actual,
-        note: e.note,
-        affected_symbols: e.affectedSymbols,
-        source: "ForexFactory",
-      })),
-      { onConflict: "id" }
-    )
+    .upsert(rows, { onConflict: "id" })
 
   if (error) {
-    return NextResponse.json({ ok: false }, { status: 500 })
+    console.error("SUPABASE UPSERT ERROR:", error)
+    return NextResponse.json(
+      { ok: false, error: error.message },
+      { status: 500 }
+    )
   }
 
-  return NextResponse.json({ ok: true, count: events.length, maxRaw })
+  return NextResponse.json({ ok: true, count: rows.length })
 }
 
-// ✅ VERCEL CRON USES THIS
+// ✅ Vercel Cron
 export async function GET() {
   return ingest()
 }
 
-// ✅ OPTIONAL: keep manual trigger if you want
+// ✅ Optional manual trigger
 export async function POST() {
   return ingest()
 }
