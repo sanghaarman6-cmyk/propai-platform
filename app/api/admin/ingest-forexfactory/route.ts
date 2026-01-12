@@ -10,10 +10,28 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+/**
+ * ForexFactory can emit "Holiday" even though our Impact type
+ * is strict. We normalize at the boundary.
+ */
+type Impact = "Low" | "Medium" | "High"
+
+function normalizeImpact(input: unknown): Impact {
+  if (input === "High" || input === "Medium" || input === "Low") return input
+  if (input === "Holiday") return "Low"
+  return "Low"
+}
+
 async function ingest() {
   const FEEDS = [
-    { name: "thisweek", url: "https://nfs.faireconomy.media/ff_calendar_thisweek.json" },
-    { name: "nextweek", url: "https://nfs.faireconomy.media/ff_calendar_nextweek.json" },
+    {
+      name: "thisweek",
+      url: "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
+    },
+    {
+      name: "nextweek",
+      url: "https://nfs.faireconomy.media/ff_calendar_nextweek.json",
+    },
   ]
 
   const rawEvents: any[] = []
@@ -32,51 +50,65 @@ async function ingest() {
 
     if (!res.ok) continue
 
-    let json: any
     try {
-      json = await res.json()
+      const json = await res.json()
+      if (Array.isArray(json)) rawEvents.push(...json)
     } catch {
       continue
     }
-
-    if (Array.isArray(json)) rawEvents.push(...json)
   }
 
   if (!rawEvents.length) {
-    return NextResponse.json({ ok: false, error: "no_raw_events" }, { status: 502 })
+    return NextResponse.json(
+      { ok: false, error: "no_raw_events" },
+      { status: 502 }
+    )
   }
 
-  const events = normalizeForexFactory(rawEvents, { includeHolidays: true })
+  const events = normalizeForexFactory(rawEvents, {
+    includeHolidays: true,
+  })
 
-  // 🔒 DEFENSIVE NORMALIZATION (THIS IS THE IMPORTANT PART)
-  const rows = events
-    .filter(e => e.id && e.datetimeISO)
-    .map(e => ({
+  /**
+   * 🔑 CRITICAL PART
+   * - Deduplicate by ID (fixes Postgres 21000)
+   * - Normalize empty strings → null
+   * - Normalize impact enum
+   * - Force valid timestamptz
+   */
+  const deduped = new Map<string, any>()
+
+  for (const e of events) {
+    if (!e.id || !e.datetimeISO) continue
+
+    deduped.set(e.id, {
       id: e.id,
       title: e.title ?? "",
       country: e.country ?? null,
       currency: e.currency ?? null,
 
-      // normalize enum
-      impact: e.impact === "Holiday" ? "Low" : e.impact ?? "Low",
+      impact: normalizeImpact(e.impact),
 
-      // force valid timestamptz
       datetime_iso: new Date(e.datetimeISO).toISOString(),
 
-      // empty string → null (critical)
-      forecast: e.forecast && e.forecast.trim() !== "" ? e.forecast : null,
-      previous: e.previous && e.previous.trim() !== "" ? e.previous : null,
-      actual: e.actual && String(e.actual).trim() !== "" ? e.actual : null,
+      forecast:
+        e.forecast && e.forecast.trim() !== "" ? e.forecast : null,
+      previous:
+        e.previous && e.previous.trim() !== "" ? e.previous : null,
+      actual:
+        e.actual && String(e.actual).trim() !== "" ? e.actual : null,
 
       note: e.note ?? null,
 
-      // always array
       affected_symbols: Array.isArray(e.affectedSymbols)
         ? e.affectedSymbols
         : [],
 
       source: "ForexFactory",
-    }))
+    })
+  }
+
+  const rows = Array.from(deduped.values())
 
   const { error } = await supabase
     .from("news_events")
@@ -90,10 +122,13 @@ async function ingest() {
     )
   }
 
-  return NextResponse.json({ ok: true, count: rows.length })
+  return NextResponse.json({
+    ok: true,
+    inserted: rows.length,
+  })
 }
 
-// ✅ Vercel Cron
+// ✅ Vercel Cron (GET only)
 export async function GET() {
   return ingest()
 }
