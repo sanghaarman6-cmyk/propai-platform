@@ -1442,12 +1442,7 @@ export default function JournalPage() {
               />
             ) : null}
 
-            <JournalAIInsightCard
-              endpoint={aiEndpoint}
-              payload={journalAIPayload}
-              disabled={!journalAIPayload || loading}
-              cacheKey={`journal:${viewMode}:${activeAccountId}:${viewMode === "month" ? `${month.getFullYear()}-${month.getMonth() + 1}` : viewMode === "year" ? `${month.getFullYear()}` : "ALL"}`}
-            />
+
           </div>
         </div>
       </div>
