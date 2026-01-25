@@ -86,7 +86,7 @@ function hoursUntilFFRelease() {
 
   const release = new Date(nyNow)
   release.setDate(release.getDate() + ((7 - release.getDay()) % 7))
-  release.setHours(1, 0, 0, 0)
+  release.setHours(24, 0, 0, 0)
 
   const diffMs = release.getTime() - nyNow.getTime()
   if (diffMs <= 0) return 0
@@ -930,15 +930,15 @@ function AnalyticsPageLoading() {
 
       <p className="text-sm text-zinc-300">
         Apologies for now our economic calendar resources currently update around every
-        <span className="text-white font-medium"> Sunday 1:00 AM (New York)</span>.
+        <span className="text-white font-medium"> Monday 00:00 AM (New York Time)</span>.
         <br /><br />
         Until then, tomorrow’s data may be incomplete.
       </p>
 
       <div className="mt-4 text-sm text-zinc-400">
-        Expected in approximately{" "}
+        Expected approximately within - {" "}
         <span className="text-emerald-400 font-semibold">
-          {ffCountdownHours} hour{ffCountdownHours === 1 ? "" : "s"}
+          {ffCountdownHours} Hour{ffCountdownHours === 1 ? "" : "s"}
         </span>.
       </div>
 
