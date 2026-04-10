@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createServerClient } from "@supabase/ssr"
 import { stripe } from "@/lib/stripe/server"
-
+throw new Error("CHECKOUT ROUTE HIT")
 export async function POST() {
   // ✅ cookies() is async in Next 16
   const cookieStore = await cookies()
