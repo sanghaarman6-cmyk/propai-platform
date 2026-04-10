@@ -52,10 +52,15 @@ export async function POST() {
     mode: "subscription",
     payment_method_types: ["card"],
     line_items: [{ price: priceId, quantity: 1 }],
+
     success_url: `${siteUrl}/app/fundamentals?welcome=1`,
     cancel_url: `${siteUrl}/app/fundamentals?checkout=cancel`,
 
     client_reference_id: user.id,
+
+    metadata: {   // ✅ ADD THIS
+      user_id: user.id,
+    },
 
     customer: profile?.stripe_customer_id || undefined,
     customer_email: profile?.stripe_customer_id
@@ -68,7 +73,6 @@ export async function POST() {
         user_id: user.id,
       },
     },
-
   })
 
   return NextResponse.json({ url: session.url })

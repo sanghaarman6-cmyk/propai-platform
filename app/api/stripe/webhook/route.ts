@@ -46,8 +46,16 @@ export async function POST(req: Request) {
     case "customer.subscription.updated": {
       const sub = event.data.object as any
 
-      // 1️⃣ Try to update by stripe_customer_id
-      const { data: updatedByCustomer } = await supabaseAdmin
+      const userId = sub.metadata?.user_id
+
+      if (!userId) {
+        console.log("❌ Missing user_id in metadata")
+        break
+      }
+
+      console.log("✅ Updating subscription for user:", userId)
+
+      await supabaseAdmin
         .from("profiles")
         .update({
           subscription_status: sub.status,
@@ -58,29 +66,27 @@ export async function POST(req: Request) {
           trial_end: sub.trial_end
             ? new Date(sub.trial_end * 1000).toISOString()
             : null,
+          stripe_customer_id: sub.customer, // ensure it's always saved
         })
-        .eq("stripe_customer_id", sub.customer)
-        .select()
-
-      // 2️⃣ If nothing updated, fall back to client_reference_id
-      if (!updatedByCustomer || updatedByCustomer.length === 0) {
-        await supabaseAdmin
-          .from("profiles")
-          .update({
-            subscription_status: sub.status,
-            plan: sub.items?.data?.[0]?.price?.id ?? null,
-            current_period_end: sub.current_period_end
-              ? new Date(sub.current_period_end * 1000).toISOString()
-              : null,
-            trial_end: sub.trial_end
-              ? new Date(sub.trial_end * 1000).toISOString()
-              : null,
-          })
-          .eq("id", sub.metadata?.user_id ?? "")
-      }
+        .eq("id", userId)
 
       break
     }
+
+    case "invoice.paid": {
+    const invoice = event.data.object as any
+
+    console.log("💰 Invoice paid for:", invoice.customer)
+
+    await supabaseAdmin
+      .from("profiles")
+      .update({
+        subscription_status: "active",
+      })
+      .eq("stripe_customer_id", invoice.customer)
+
+    break
+  }
 
 
     case "customer.subscription.deleted": {
