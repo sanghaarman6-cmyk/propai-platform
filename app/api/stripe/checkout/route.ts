@@ -2,9 +2,8 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createServerClient } from "@supabase/ssr"
 import { stripe } from "@/lib/stripe/server"
-throw new Error("CHECKOUT ROUTE HIT")
+
 export async function POST() {
-  // ✅ cookies() is async in Next 16
   const cookieStore = await cookies()
 
   const supabase = createServerClient(
@@ -24,7 +23,7 @@ export async function POST() {
     }
   )
 
-  // ✅ Auth now works
+  // ✅ Get authenticated user
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -33,6 +32,7 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  // ✅ Get profile
   const { data: profile, error } = await supabase
     .from("profiles")
     .select("stripe_customer_id, trial_used")
@@ -48,6 +48,7 @@ export async function POST() {
 
   const eligibleForTrial = profile?.trial_used === false
 
+  // ✅ Create Stripe Checkout session (FIXED)
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     payment_method_types: ["card"],
@@ -56,23 +57,30 @@ export async function POST() {
     success_url: `${siteUrl}/app/fundamentals?welcome=1`,
     cancel_url: `${siteUrl}/app/fundamentals?checkout=cancel`,
 
+    // 🔑 ALWAYS include user reference
     client_reference_id: user.id,
 
-    metadata: {   // ✅ ADD THIS
+    // 🔑 Metadata on session
+    metadata: {
       user_id: user.id,
     },
 
+    // 🔑 Handle existing vs new customer
     customer: profile?.stripe_customer_id || undefined,
     customer_email: profile?.stripe_customer_id
       ? undefined
       : user.email ?? undefined,
 
+    // 🔑 Subscription config
     subscription_data: {
       ...(eligibleForTrial ? { trial_period_days: 14 } : {}),
       metadata: {
         user_id: user.id,
       },
     },
+
+    // 🔑 Ensure subscription is available immediately
+    expand: ["subscription"],
   })
 
   return NextResponse.json({ url: session.url })
