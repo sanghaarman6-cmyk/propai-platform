@@ -3,6 +3,11 @@ import { stripe } from "@/lib/stripe/server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import Stripe from "stripe"
 
+export async function GET() {
+  console.log("👀 GET webhook check")
+  return new Response("OK", { status: 200 })
+}
+
 export async function POST(req: Request) {
   console.log("🔥 WEBHOOK HIT")
 
